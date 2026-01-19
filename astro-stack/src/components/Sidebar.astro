@@ -1,0 +1,19 @@
+---
+/**
+ * Sidebar Component (Static)
+ * No client-side JS needed for navigation
+ */
+---
+
+<nav class="bg-white rounded-lg p-4 space-y-2">
+  <a href="/" class="block px-4 py-2 rounded hover:bg-gray-100 font-semibold">Home</a>
+  <a href="/explore" class="block px-4 py-2 rounded hover:bg-gray-100">Explore</a>
+  <a href="/notifications" class="block px-4 py-2 rounded hover:bg-gray-100">Notifications</a>
+  <a href="/profile" class="block px-4 py-2 rounded hover:bg-gray-100">Profile</a>
+</nav>
+
+<style>
+  a.active {
+    @apply bg-blue-50 text-blue-600;
+  }
+</style>

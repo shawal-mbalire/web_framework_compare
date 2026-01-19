@@ -1,0 +1,178 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # Traefik - Reverse Proxy & Load Balancer
+  # ========================================
+  traefik:
+    image: traefik:v2.10
+    container_name: social-audit-traefik
+    command:
+      # Enable Docker provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      
+      # Entry points
+      - "--entrypoints.web.address=:80"
+      
+      # Enable dashboard (accessible at http://localhost:8080)
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      
+      # Logging
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"       # HTTP
+      - "8080:8080"   # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - social-audit-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  # ========================================
+  # PostgreSQL Database (Shared by all stacks)
+  # ========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: social-audit-db
+    environment:
+      POSTGRES_DB: social_audit
+      POSTGRES_USER: social_user
+      POSTGRES_PASSWORD: social_pass_2026
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - social-audit-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U social_user -d social_audit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Redis (for Flask background jobs)
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: social-audit-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - social-audit-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ========================================
+  # Flask Stack (Python + uv + Ruff)
+  # ========================================
+  flask:
+    build:
+      context: ./flask-stack
+      dockerfile: Dockerfile
+    container_name: social-audit-flask
+    environment:
+      DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: dev-secret-key-change-in-production
+      FLASK_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - social-audit-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flask.rule=Host(`flask.localhost`)"
+      - "traefik.http.routers.flask.entrypoints=web"
+      - "traefik.http.services.flask.loadbalancer.server.port=5000"
+      # Sticky sessions for Flask
+      - "traefik.http.services.flask.loadbalancer.sticky.cookie=true"
+
+  # ========================================
+  # Astro Stack (Astro 6 + Svelte 5 + Bun)
+  # ========================================
+  astro:
+    build:
+      context: ./astro-stack
+      dockerfile: Dockerfile
+    container_name: social-audit-astro
+    environment:
+      DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
+      PUBLIC_API_URL: http://astro.localhost
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - social-audit-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.astro.rule=Host(`astro.localhost`)"
+      - "traefik.http.routers.astro.entrypoints=web"
+      - "traefik.http.services.astro.loadbalancer.server.port=4321"
+
+  # ========================================
+  # TanStack Start (React 19 + Bun)
+  # ========================================
+  tanstack:
+    build:
+      context: ./tanstack-stack
+      dockerfile: Dockerfile
+    container_name: social-audit-tanstack
+    environment:
+      DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
+      VITE_API_URL: http://tanstack.localhost
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - social-audit-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tanstack.rule=Host(`tanstack.localhost`)"
+      - "traefik.http.routers.tanstack.entrypoints=web"
+      - "traefik.http.services.tanstack.loadbalancer.server.port=3000"
+
+  # ========================================
+  # Angular Stack (Angular 21 + Signals + Zoneless)
+  # ========================================
+  angular:
+    build:
+      context: ./angular-stack
+      dockerfile: Dockerfile
+    container_name: social-audit-angular
+    environment:
+      API_URL: http://angular.localhost
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - social-audit-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.angular.rule=Host(`angular.localhost`)"
+      - "traefik.http.routers.angular.entrypoints=web"
+      - "traefik.http.services.angular.loadbalancer.server.port=4200"
+
+networks:
+  social-audit-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

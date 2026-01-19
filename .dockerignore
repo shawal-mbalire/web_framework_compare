@@ -1,0 +1,71 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+ENV/
+env/
+
+# Node.js / TypeScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.local
+.cache/
+.parcel-cache/
+dist/
+.next/
+.nuxt/
+
+# Angular
+.angular/
+/angular-stack/.angular/
+
+# Bun
+.bun/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test
+coverage/
+test-results/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
