@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Social Audit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="feed-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('feed.home') }}" class="sidebar-link active">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 13h1v7c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-7h1a1 1 0 0 0 .707-1.707l-9-9a.999.999 0 0 0-1.414 0l-9 9A1 1 0 0 0 3 13z"/>
+                    </svg>
+                    Home
+                </a>
+                <a href="{{ url_for('feed.explore') }}" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Explore
+                </a>
+                <a href="{{ url_for('feed.trending') }}" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                    Trending
+                </a>
+                <a href="/notifications" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    Notifications
+                </a>
+                <a href="/users/{{ session.get('username') }}" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    Profile
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Feed -->
+        <section class="feed-main">
+            <header class="feed-header">
+                <h2>Home</h2>
+            </header>
+
+            <!-- Compose Section -->
+            {% include 'components/compose.html' %}
+
+            <!-- Posts Feed -->
+            <div class="posts-feed">
+                {% if posts %}
+                    {% for post in posts %}
+                        {% include 'components/post_card.html' %}
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>No posts yet. Follow some users or create your first post!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Pagination -->
+            {% if has_more or page > 1 %}
+            <nav class="pagination" aria-label="Pagination">
+                {% if page > 1 %}
+                <a href="{{ url_for('feed.home', page=page-1) }}" class="btn btn-secondary">Previous</a>
+                {% endif %}
+                
+                <span class="page-info">Page {{ page }}</span>
+                
+                {% if has_more %}
+                <a href="{{ url_for('feed.home', page=page+1) }}" class="btn btn-secondary">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
+        </section>
+
+        <!-- Trending Widget (Right Sidebar) -->
+        <aside class="trending-widget">
+            <section class="widget">
+                <h3>Trending Now</h3>
+                <div class="trending-list">
+                    <a href="/search?q=%23flask" class="trending-item">
+                        <div class="trending-topic">#flask</div>
+                        <div class="trending-count">2.4K posts</div>
+                    </a>
+                    <a href="/search?q=%23webdev" class="trending-item">
+                        <div class="trending-topic">#webdev</div>
+                        <div class="trending-count">1.8K posts</div>
+                    </a>
+                    <a href="/search?q=%23python" class="trending-item">
+                        <div class="trending-topic">#python</div>
+                        <div class="trending-count">3.2K posts</div>
+                    </a>
+                </div>
+            </section>
+
+            <section class="widget">
+                <h3>Who to Follow</h3>
+                <div class="suggestions-list">
+                    <div class="suggestion-item">
+                        <img src="https://via.placeholder.com/40" alt="User" width="40" height="40">
+                        <div class="suggestion-info">
+                            <div class="suggestion-name">Developer Dan</div>
+                            <div class="suggestion-username">@devdan</div>
+                        </div>
+                        <form method="POST" action="/users/devdan/follow">
+                            <button type="submit" class="btn btn-primary btn-sm">Follow</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}

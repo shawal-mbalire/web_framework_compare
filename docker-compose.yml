@@ -94,6 +94,21 @@ services:
         condition: service_healthy
     networks:
       - social-audit-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.flask.rule=Host(`flask.localhost`)"
@@ -101,6 +116,12 @@ services:
       - "traefik.http.services.flask.loadbalancer.server.port=5000"
       # Sticky sessions for Flask
       - "traefik.http.services.flask.loadbalancer.sticky.cookie=true"
+      # Security headers
+      - "traefik.http.middlewares.flask-headers.headers.customresponseheaders.X-Robots-Tag=noindex,nofollow"
+      - "traefik.http.middlewares.flask-headers.headers.contentSecurityPolicy=default-src 'self'"
+      - "traefik.http.middlewares.flask-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.flask-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.routers.flask.middlewares=flask-headers"
 
   # ========================================
   # Astro Stack (Astro 6 + Svelte 5 + Bun)
@@ -119,11 +140,31 @@ services:
         condition: service_healthy
     networks:
       - social-audit-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4321/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.astro.rule=Host(`astro.localhost`)"
       - "traefik.http.routers.astro.entrypoints=web"
       - "traefik.http.services.astro.loadbalancer.server.port=4321"
+      # Security headers
+      - "traefik.http.middlewares.astro-headers.headers.contentSecurityPolicy=default-src 'self' 'unsafe-inline'"
+      - "traefik.http.middlewares.astro-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.astro-headers.headers.frameDeny=true"
+      - "traefik.http.routers.astro.middlewares=astro-headers"
 
   # ========================================
   # TanStack Start (React 19 + Bun)
@@ -142,11 +183,31 @@ services:
         condition: service_healthy
     networks:
       - social-audit-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tanstack.rule=Host(`tanstack.localhost`)"
       - "traefik.http.routers.tanstack.entrypoints=web"
       - "traefik.http.services.tanstack.loadbalancer.server.port=3000"
+      # Security headers
+      - "traefik.http.middlewares.tanstack-headers.headers.contentSecurityPolicy=default-src 'self' 'unsafe-inline'"
+      - "traefik.http.middlewares.tanstack-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.tanstack-headers.headers.frameDeny=true"
+      - "traefik.http.routers.tanstack.middlewares=tanstack-headers"
 
   # ========================================
   # Angular Stack (Angular 21 + Signals + Zoneless)
@@ -163,11 +224,31 @@ services:
         condition: service_healthy
     networks:
       - social-audit-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4200/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.angular.rule=Host(`angular.localhost`)"
       - "traefik.http.routers.angular.entrypoints=web"
       - "traefik.http.services.angular.loadbalancer.server.port=4200"
+      # Security headers
+      - "traefik.http.middlewares.angular-headers.headers.contentSecurityPolicy=default-src 'self' 'unsafe-inline'"
+      - "traefik.http.middlewares.angular-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.angular-headers.headers.frameDeny=true"
+      - "traefik.http.routers.angular.middlewares=angular-headers"
 
 networks:
   social-audit-network:

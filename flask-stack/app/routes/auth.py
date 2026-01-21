@@ -1,59 +1,77 @@
 """
 Authentication routes
-JWT-based authentication with refresh tokens
+Session-based authentication
 """
 
-from flask import Blueprint, request, jsonify
-from app.schemas import LoginRequest, UserCreate, TokenResponse, UserPrivate
+from flask import Blueprint, request, render_template, redirect, url_for, flash, session
 
 bp = Blueprint("auth", __name__)
 
 
-@bp.route("/register", methods=["POST"])
-async def register():
+@bp.route("/register", methods=["GET", "POST"])
+def register():
     """Register a new user"""
+    if request.method == "GET":
+        return render_template("pages/auth/register.html")
+    
+    # POST - handle registration
+    username = request.form.get("username", "").strip()
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    password_confirm = request.form.get("password_confirm", "")
+    
     # TODO: Implement user registration
-    # 1. Validate UserCreate schema
-    # 2. Hash password with bcrypt
-    # 3. Create user in database
-    # 4. Generate JWT tokens
-    # 5. Return TokenResponse
-    return jsonify({"message": "Not implemented"}), 501
+    # 1. Validate input
+    # 2. Check if username/email exists
+    # 3. Hash password with bcrypt
+    # 4. Create user in database
+    # 5. Create session
+    
+    if not username or not email or not password:
+        flash("All fields are required", "error")
+        return redirect(url_for("auth.register"))
+    
+    if password != password_confirm:
+        flash("Passwords do not match", "error")
+        return redirect(url_for("auth.register"))
+    
+    flash("Registration successful! Please log in.", "success")
+    return redirect(url_for("auth.login"))
 
 
-@bp.route("/login", methods=["POST"])
-async def login():
-    """Login user and return JWT tokens"""
+@bp.route("/login", methods=["GET", "POST"])
+def login():
+    """Login user"""
+    if request.method == "GET":
+        return render_template("pages/auth/login.html")
+    
+    # POST - handle login
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+    
     # TODO: Implement login
-    # 1. Validate LoginRequest
-    # 2. Verify credentials
-    # 3. Generate JWT access + refresh tokens
-    # 4. Create session record
-    # 5. Return TokenResponse
-    return jsonify({"message": "Not implemented"}), 501
-
-
-@bp.route("/refresh", methods=["POST"])
-async def refresh():
-    """Refresh access token using refresh token"""
-    # TODO: Implement token refresh
-    return jsonify({"message": "Not implemented"}), 501
+    # 1. Validate credentials
+    # 2. Verify password with bcrypt
+    # 3. Create session
+    
+    if not username or not password:
+        flash("Username and password are required", "error")
+        return redirect(url_for("auth.login"))
+    
+    # Temporary: set session
+    session["user_id"] = "temp_user_id"
+    session["username"] = username
+    
+    flash("Login successful!", "success")
+    return redirect(url_for("feed.home"))
 
 
 @bp.route("/logout", methods=["POST"])
-async def logout():
-    """Logout user and revoke session"""
+def logout():
+    """Logout user"""
     # TODO: Implement logout
-    # 1. Get token from Authorization header
-    # 2. Mark session as revoked
-    return jsonify({"message": "Logged out"}), 200
-
-
-@bp.route("/me", methods=["GET"])
-async def get_current_user():
-    """Get current authenticated user"""
-    # TODO: Implement
-    # 1. Verify JWT token
-    # 2. Get user from database
-    # 3. Return UserPrivate schema
-    return jsonify({"message": "Not implemented"}), 501
+    # 1. Clear session
+    
+    session.clear()
+    flash("Logged out successfully", "success")
+    return redirect(url_for("auth.login"))

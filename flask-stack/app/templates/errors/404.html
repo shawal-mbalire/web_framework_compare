@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Social Audit{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-message">The page you're looking for doesn't exist or has been moved.</p>
+        <a href="{{ url_for('feed.home') }}" class="btn btn-primary">Go Home</a>
+    </div>
+</div>
+{% endblock %}

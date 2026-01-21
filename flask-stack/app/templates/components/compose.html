@@ -1,0 +1,48 @@
+<!-- Compose Form Component -->
+<section class="compose-section">
+    <form method="POST" action="{{ url_for('posts.create_post') }}" class="compose-form">
+        {% if parent_id %}
+        <input type="hidden" name="parent_id" value="{{ parent_id }}">
+        {% endif %}
+        
+        <div class="compose-header">
+            <img src="https://via.placeholder.com/48" alt="Your avatar" class="compose-avatar" width="48" height="48">
+        </div>
+        
+        <div class="compose-body">
+            <textarea 
+                name="content" 
+                id="compose-content" 
+                placeholder="What's happening?" 
+                maxlength="280" 
+                required
+                rows="3"
+                oninput="this.nextElementSibling.querySelector('.char-count').textContent = this.value.length"
+            ></textarea>
+            
+            <div class="compose-footer">
+                <div class="char-counter">
+                    <span class="char-count">0</span>/280
+                    <meter min="0" max="280" low="240" high="260" optimum="100" value="0" id="char-meter"></meter>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Post</button>
+            </div>
+        </div>
+    </form>
+    
+    <style>
+        #compose-content:invalid ~ .compose-footer .btn { opacity: 0.5; pointer-events: none; }
+        #compose-content:user-invalid { border-color: var(--color-error); }
+        textarea:focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+        
+        /* Update meter based on textarea value */
+        #compose-content:valid ~ .compose-footer meter {
+            --value: attr(value);
+        }
+    </style>
+    
+    <script>
+        document.getElementById('compose-content').oninput = function() { document.getElementById('char-meter').value = this.value.length; };
+    </script>
+</section>

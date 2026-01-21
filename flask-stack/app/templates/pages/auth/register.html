@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Social Audit{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <header class="auth-header">
+            <h2>Join Social Audit</h2>
+            <p class="text-muted">Create your account to get started.</p>
+        </header>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    required 
+                    autofocus
+                    autocomplete="username"
+                    pattern="[a-zA-Z0-9_]{3,20}"
+                    title="3-20 characters, letters, numbers, and underscores only"
+                    placeholder="johndoe"
+                >
+                <small class="form-hint">3-20 characters, letters, numbers, and underscores only</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required
+                    autocomplete="email"
+                    placeholder="john@example.com"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required
+                    autocomplete="new-password"
+                    minlength="8"
+                    placeholder="••••••••"
+                >
+                <small class="form-hint">At least 8 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="password_confirm">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="password_confirm" 
+                    name="password_confirm" 
+                    required
+                    autocomplete="new-password"
+                    minlength="8"
+                    placeholder="••••••••"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="agree_terms" required>
+                    <span>I agree to the <a href="/terms" target="_blank">Terms of Service</a> and <a href="/privacy" target="_blank">Privacy Policy</a></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        </form>
+
+        <footer class="auth-footer">
+            <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+        </footer>
+    </div>
+</div>
+
+<style>
+    /* Password matching validation using :has() */
+    .auth-form:has(#password:not(:placeholder-shown)):has(#password_confirm:not(:placeholder-shown)) #password_confirm:invalid {
+        border-color: var(--color-error);
+    }
+</style>
+
+<script>
+    document.getElementById('password_confirm').oninput = function() { this.setCustomValidity(this.value !== document.getElementById('password').value ? 'Passwords do not match' : ''); };
+</script>
+{% endblock %}
