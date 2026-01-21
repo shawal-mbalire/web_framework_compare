@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Trending - Social Audit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="feed-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('feed.home') }}" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Home
+                </a>
+                <a href="{{ url_for('feed.explore') }}" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Explore
+                </a>
+                <a href="{{ url_for('feed.trending') }}" class="sidebar-link active">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                    Trending
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Trending Feed -->
+        <section class="feed-main">
+            <header class="feed-header">
+                <h2>Trending Posts</h2>
+                <p class="text-muted">Most popular in the last {{ timeframe }}</p>
+            </header>
+
+            <!-- Posts Feed -->
+            <div class="posts-feed">
+                {% if posts %}
+                    {% for post in posts %}
+                        {% include 'components/post_card.html' %}
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <p>No trending posts at the moment. Check back later!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Trending Topics Widget -->
+        <aside class="trending-widget">
+            <section class="widget">
+                <h3>Trending Topics</h3>
+                <div class="trending-list">
+                    <a href="/search?q=%23webdev" class="trending-item">
+                        <div class="trending-topic">#webdev</div>
+                        <div class="trending-count">5.2K posts · Trending</div>
+                        <progress value="85" max="100"></progress>
+                    </a>
+                    <a href="/search?q=%23python" class="trending-item">
+                        <div class="trending-topic">#python</div>
+                        <div class="trending-count">3.8K posts · Trending</div>
+                        <progress value="65" max="100"></progress>
+                    </a>
+                    <a href="/search?q=%23flask" class="trending-item">
+                        <div class="trending-topic">#flask</div>
+                        <div class="trending-count">2.1K posts · Trending</div>
+                        <progress value="45" max="100"></progress>
+                    </a>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<style>
+.trending-item progress {
+    width: 100%;
+    height: 4px;
+    margin-top: var(--spacing-xs);
+    appearance: none;
+}
+
+.trending-item progress::-webkit-progress-bar {
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-full);
+}
+
+.trending-item progress::-webkit-progress-value {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    border-radius: var(--radius-full);
+}
+
+.trending-item progress::-moz-progress-bar {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    border-radius: var(--radius-full);
+}
+</style>
+{% endblock %}

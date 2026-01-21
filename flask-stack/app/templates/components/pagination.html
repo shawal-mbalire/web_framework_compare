@@ -1,0 +1,89 @@
+<!-- Pagination Component (Pure CSS) -->
+<nav class="pagination" aria-label="Page navigation">
+    {% if page > 1 %}
+    <a href="?page=1" class="pagination-link" aria-label="First page">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+    <a href="?page={{ page - 1 }}" class="pagination-link" aria-label="Previous page">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+            <path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+    {% else %}
+    <span class="pagination-link pagination-disabled">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+            <path d="M11 19l-7-7 7-7m8 14l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </span>
+    <span class="pagination-link pagination-disabled">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+            <path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </span>
+    {% endif %}
+    
+    <span class="pagination-current">
+        Page {{ page }}
+    </span>
+    
+    {% if has_more %}
+    <a href="?page={{ page + 1 }}" class="pagination-link" aria-label="Next page">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+            <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+    {% else %}
+    <span class="pagination-link pagination-disabled">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none">
+            <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </span>
+    {% endif %}
+</nav>
+
+<style>
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-xl) 0;
+}
+
+.pagination-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.pagination-link:hover:not(.pagination-disabled) {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.pagination-link:active:not(.pagination-disabled) {
+    transform: translateY(0);
+}
+
+.pagination-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-current {
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+</style>

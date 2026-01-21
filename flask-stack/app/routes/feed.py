@@ -83,3 +83,11 @@ def trending():
     posts = []
     
     return render_template("pages/trending.html", posts=posts, timeframe="24h")
+
+
+@bp.route("/demo", methods=["GET"])
+def demo():
+    """
+    Demo page showcasing all HTML/CSS features
+    """
+    return render_template("pages/demo.html")

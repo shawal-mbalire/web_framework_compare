@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Demo - All Features{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 2rem auto;">
+    <h1>🎨 Flask Reactive UI - Complete Demo</h1>
+    <p class="lead">All interactive features using HTML, CSS, and minimal JavaScript</p>
+    
+    <hr>
+    
+    <!-- Section 1: Dialogs -->
+    <section class="demo-section">
+        <h2>1. Dialog Elements</h2>
+        <p>Click buttons to open dialogs (uses <code>dialog.showModal()</code>)</p>
+        
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="document.getElementById('demo-dialog-1').showModal()">
+                Open Simple Dialog
+            </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('demo-dialog-2').showModal()">
+                Open Form Dialog
+            </button>
+        </div>
+        
+        <!-- Simple Dialog -->
+        <dialog id="demo-dialog-1" class="modal-dialog">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h2>Simple Dialog</h2>
+                    <button type="button" class="btn-close" onclick="document.getElementById('demo-dialog-1').close()">&times;</button>
+                </div>
+                <div class="dialog-body">
+                    <p>This is a native HTML <code>&lt;dialog&gt;</code> element!</p>
+                    <ul>
+                        <li>✅ Backdrop overlay (automatic)</li>
+                        <li>✅ Focus trapping</li>
+                        <li>✅ ESC key to close</li>
+                        <li>✅ Animated with CSS</li>
+                    </ul>
+                </div>
+                <div class="dialog-footer">
+                    <button class="btn btn-primary" onclick="document.getElementById('demo-dialog-1').close()">Close</button>
+                </div>
+            </div>
+        </dialog>
+        
+        <!-- Form Dialog -->
+        <dialog id="demo-dialog-2" class="modal-dialog">
+            <form method="dialog" class="dialog-form">
+                <div class="dialog-header">
+                    <h2>Dialog with Form</h2>
+                    <button type="button" class="btn-close" onclick="document.getElementById('demo-dialog-2').close()">&times;</button>
+                </div>
+                <div class="dialog-body">
+                    <label for="demo-input">Your message:</label>
+                    <textarea id="demo-input" class="form-textarea" rows="3" placeholder="Type something..."></textarea>
+                </div>
+                <div class="dialog-footer">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('demo-dialog-2').close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </dialog>
+    </section>
+    
+    <hr>
+    
+    <!-- Section 2: Details/Summary -->
+    <section class="demo-section">
+        <h2>2. Details/Summary (Accordion)</h2>
+        <p>Native HTML accordion - no JavaScript required!</p>
+        
+        <details class="accordion-item">
+            <summary class="accordion-header">What is this?</summary>
+            <div class="accordion-content">
+                <p>This is a native HTML <code>&lt;details&gt;</code> element with <code>&lt;summary&gt;</code>.</p>
+                <p>Features: Keyboard accessible, works without JS, semantic HTML.</p>
+            </div>
+        </details>
+        
+        <details class="accordion-item">
+            <summary class="accordion-header">How does it work?</summary>
+            <div class="accordion-content">
+                <p>The browser handles all the interaction natively!</p>
+                <ul>
+                    <li>Click or press Space/Enter to toggle</li>
+                    <li>Style with CSS</li>
+                    <li>Fully accessible</li>
+                </ul>
+            </div>
+        </details>
+        
+        <details class="accordion-item" open>
+            <summary class="accordion-header">Can it be open by default?</summary>
+            <div class="accordion-content">
+                <p>Yes! Just add the <code>open</code> attribute (like this one).</p>
+            </div>
+        </details>
+    </section>
+    
+    <hr>
+    
+    <!-- Section 3: Form Validation -->
+    <section class="demo-section">
+        <h2>3. HTML5 Form Validation</h2>
+        <p>Built-in validation without JavaScript!</p>
+        
+        <form class="demo-form">
+            <div class="form-group">
+                <label for="email">Email (required):</label>
+                <input type="email" id="email" class="form-input" required placeholder="you@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="url">Website (must be HTTPS):</label>
+                <input type="url" id="url" class="form-input" pattern="https://.*" placeholder="https://example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="age">Age (18-99):</label>
+                <input type="number" id="age" class="form-input" min="18" max="99" placeholder="25">
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Message (max 100 chars):</label>
+                <textarea id="message" class="form-textarea" maxlength="100" rows="3" placeholder="Type here..." oninput="this.nextElementSibling.textContent = this.value.length + '/100'"></textarea>
+                <div class="char-counter">0/100</div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Submit (Try Invalid Data)</button>
+        </form>
+    </section>
+    
+    <hr>
+    
+    <!-- Section 4: CSS Animations -->
+    <section class="demo-section">
+        <h2>4. CSS Animations</h2>
+        <p>All transitions are pure CSS - no JavaScript!</p>
+        
+        <div class="animation-demo">
+            <div class="animated-box fade-in">Fade In</div>
+            <div class="animated-box slide-in">Slide In</div>
+            <div class="animated-box scale-in">Scale In</div>
+            <div class="animated-box rotate-in">Rotate In</div>
+        </div>
+    </section>
+    
+    <hr>
+    
+    <!-- Section 5: Interactive Buttons -->
+    <section class="demo-section">
+        <h2>5. Action Buttons with Feedback</h2>
+        <p>Instant visual feedback with CSS :active and animations</p>
+        
+        <div class="action-buttons">
+            <button class="action-btn">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                <span>42</span>
+            </button>
+            
+            <button class="action-btn action-liked">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                <span>43</span>
+            </button>
+            
+            <button class="action-btn">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span>12</span>
+            </button>
+            
+            <button class="action-btn">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <span>8</span>
+            </button>
+        </div>
+        <p class="hint">Click buttons to see scale animation on :active</p>
+    </section>
+    
+    <hr>
+    
+    <!-- Section 6: CSS Grid -->
+    <section class="demo-section">
+        <h2>6. CSS Grid (Responsive)</h2>
+        <p>Auto-responsive grid without media queries!</p>
+        
+        <div class="responsive-grid">
+            <div class="grid-item">Item 1</div>
+            <div class="grid-item">Item 2</div>
+            <div class="grid-item">Item 3</div>
+            <div class="grid-item">Item 4</div>
+            <div class="grid-item">Item 5</div>
+            <div class="grid-item">Item 6</div>
+        </div>
+    </section>
+    
+    <hr>
+    
+    <!-- Summary -->
+    <section class="demo-section">
+        <h2>✨ Summary</h2>
+        <div class="summary-card">
+            <h3>JavaScript Used:</h3>
+            <ul>
+                <li><code>dialog.showModal()</code> - 2 times</li>
+                <li><code>dialog.close()</code> - 4 times</li>
+                <li>Character counter - 1 <code>oninput</code></li>
+            </ul>
+            <p><strong>Total: 7 one-line statements</strong></p>
+            
+            <h3>Everything Else:</h3>
+            <ul>
+                <li>✅ Pure HTML/CSS</li>
+                <li>✅ Fully accessible</li>
+                <li>✅ Works without JS (graceful degradation)</li>
+                <li>✅ Native browser features</li>
+                <li>✅ GPU-accelerated animations</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+<style>
+/* Demo-specific styles */
+.demo-section {
+    margin: 3rem 0;
+}
+
+.lead {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 2rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.accordion-item {
+    margin-bottom: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.accordion-header {
+    padding: 1rem;
+    background: var(--color-bg-secondary);
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+}
+
+.accordion-header:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.accordion-content {
+    padding: 1rem;
+    background: var(--color-bg-primary);
+}
+
+.demo-form {
+    max-width: 500px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.animation-demo {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.animated-box {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: var(--color-bg-primary);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+}
+
+.fade-in {
+    animation: fadeIn 1s ease infinite alternate;
+}
+
+.slide-in {
+    animation: slideIn 1s ease infinite alternate;
+}
+
+.scale-in {
+    animation: scaleIn 1s ease infinite alternate;
+}
+
+.rotate-in {
+    animation: rotateIn 2s ease infinite;
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.9); }
+    to { transform: scale(1); }
+}
+
+@keyframes rotateIn {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.hint {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.grid-item {
+    padding: 2rem;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-weight: 600;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(173, 255, 47, 0.1));
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+}
+
+.summary-card h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.summary-card h3:first-child {
+    margin-top: 0;
+}
+
+.summary-card code {
+    background: var(--color-bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+}
+</style>
+{% endblock %}

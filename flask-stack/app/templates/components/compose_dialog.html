@@ -1,0 +1,27 @@
+<!-- Compose Dialog Component -->
+<dialog id="compose-dialog" class="modal-dialog">
+    <form method="POST" action="{{ url_for('posts.create_post') }}" class="dialog-form">
+        <header class="dialog-header">
+            <h2>Create Post</h2>
+            <button type="button" class="btn-close" onclick="document.getElementById('compose-dialog').close()" aria-label="Close">&times;</button>
+        </header>
+        
+        <div class="dialog-body">
+            <textarea 
+                name="content" 
+                placeholder="What's on your mind?" 
+                required 
+                maxlength="280" 
+                rows="4"
+                class="form-textarea"
+                oninput="this.nextElementSibling.textContent = this.value.length + '/280'"
+            ></textarea>
+            <div class="char-counter">0/280</div>
+        </div>
+        
+        <footer class="dialog-footer">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('compose-dialog').close()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Post</button>
+        </footer>
+    </form>
+</dialog>

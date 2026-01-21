@@ -11,8 +11,12 @@ def create_app() -> Flask:
     app = Flask(__name__)
     
     # Configuration
-    app.config["SECRET_KEY"] = settings.SECRET_KEY
+    app.config["SECRET_KEY"] = settings.SECRET_KEY or "dev-secret-key-change-in-production"
     app.config["DEBUG"] = settings.FLASK_DEBUG
+    
+    # Session configuration for reactive pattern
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = False  # Set to True in production with HTTPS
     
     # Register blueprints
     from app.routes import auth, posts, users, feed, notifications
@@ -39,3 +43,4 @@ def create_app() -> Flask:
         return render_template("errors/500.html"), 500
     
     return app
+

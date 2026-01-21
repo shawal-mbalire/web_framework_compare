@@ -1,148 +1,115 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social Audit - Flask Stack</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-    <!-- HTMx + Alpine.js interactivity layer -->
-    <div x-data="{ user: null, notifications: 0 }" class="min-h-screen">
-        <!-- Header -->
-        <header class="bg-white border-b sticky top-0 z-10">
-            <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-blue-600">Social Audit</h1>
-                <div class="flex gap-4 items-center">
-                    <button 
-                        @click="notifications = 0" 
-                        class="relative"
-                        :class="notifications > 0 ? 'animate-pulse' : ''"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                        <span x-show="notifications > 0" x-text="notifications" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
-                    </button>
-                    <div x-show="user" x-text="'@' + (user?.username || '')" class="font-semibold"></div>
-                </div>
-            </div>
-        </header>
+{% extends "base.html" %}
 
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Sidebar -->
-            <aside class="hidden md:block">
-                <nav class="bg-white rounded-lg p-4 space-y-2">
-                    <a href="#" class="block px-4 py-2 rounded hover:bg-gray-100 font-semibold">Home</a>
-                    <a href="#" class="block px-4 py-2 rounded hover:bg-gray-100">Explore</a>
-                    <a href="#" class="block px-4 py-2 rounded hover:bg-gray-100">Notifications</a>
-                    <a href="#" class="block px-4 py-2 rounded hover:bg-gray-100">Profile</a>
-                </nav>
-            </aside>
+{% block title %}Welcome - Social Audit{% endblock %}
 
-            <!-- Feed -->
-            <div class="md:col-span-2 space-y-4">
-                <!-- Compose -->
-                <div class="bg-white rounded-lg p-4 border">
-                    <div x-data="{ content: '', posting: false }">
-                        <textarea 
-                            x-model="content"
-                            placeholder="What's happening?"
-                            class="w-full border rounded p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            rows="3"
-                        ></textarea>
-                        <div class="flex justify-between items-center mt-2">
-                            <span x-text="content.length + '/280'" class="text-sm" :class="content.length > 280 ? 'text-red-500' : 'text-gray-500'"></span>
-                            <button 
-                                @click="posting = true"
-                                :disabled="content.length === 0 || content.length > 280 || posting"
-                                class="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                hx-post="/api/posts"
-                                hx-vals='js:{content: content}'
-                                hx-swap="afterbegin"
-                                hx-target="#feed"
-                            >
-                                <span x-show="!posting">Post</span>
-                                <span x-show="posting">Posting...</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Feed -->
-                <div id="feed" class="space-y-4">
-                    <!-- Posts loaded via HTMx -->
-                    <div class="bg-white rounded-lg p-4 border">
-                        <div class="flex gap-3">
-                            <img src="https://via.placeholder.com/48" class="w-12 h-12 rounded-full">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-semibold">Sample User</span>
-                                    <span class="text-gray-500">@sampleuser</span>
-                                    <span class="text-gray-500">· 2h</span>
-                                </div>
-                                <p class="mt-1">This is a sample post to demonstrate the UI. Real posts will be loaded via HTMx.</p>
-                                
-                                <!-- Engagement buttons (Optimistic UI with Alpine.js) -->
-                                <div x-data="{ liked: false, likes: 42, retweeted: false, retweets: 8 }" class="flex gap-6 mt-3 text-gray-500">
-                                    <button 
-                                        @click="liked = !liked; likes += liked ? 1 : -1"
-                                        class="flex items-center gap-1 hover:text-red-500"
-                                        :class="liked ? 'text-red-500' : ''"
-                                    >
-                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        <span x-text="likes"></span>
-                                    </button>
-                                    <button 
-                                        @click="retweeted = !retweeted; retweets += retweeted ? 1 : -1"
-                                        class="flex items-center gap-1 hover:text-green-500"
-                                        :class="retweeted ? 'text-green-500' : ''"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                        <span x-text="retweets"></span>
-                                    </button>
-                                    <button class="flex items-center gap-1 hover:text-blue-500">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                        </svg>
-                                        <span>12</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Infinite Scroll Trigger -->
-                <div 
-                    hx-get="/api/feed?cursor=next" 
-                    hx-trigger="revealed"
-                    hx-swap="beforebegin"
-                    class="text-center py-4"
-                >
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- SSE Connection for Real-time Notifications -->
-    <script>
-        // Real-time notification updates via Server-Sent Events
-        const notificationSource = new EventSource('/api/notifications/stream');
+{% block content %}
+<div class="landing-container">
+    <div class="landing-hero">
+        <h1 class="landing-title">Welcome to Social Audit</h1>
+        <p class="landing-subtitle">A modern social media platform built with Flask, HTML & CSS</p>
         
-        notificationSource.addEventListener('notification', (e) => {
-            const data = JSON.parse(e.data);
-            // Update Alpine.js notification count
-            window.dispatchEvent(new CustomEvent('notification', { detail: data }));
-        });
-    </script>
-</body>
-</html>
+        <div class="landing-features">
+            <div class="feature">
+                <h3>🚀 No JavaScript Required</h3>
+                <p>Pure HTML forms and CSS for interactions</p>
+            </div>
+            <div class="feature">
+                <h3>🎨 Modern CSS</h3>
+                <p>Grid, Flexbox, Container Queries & more</p>
+            </div>
+            <div class="feature">
+                <h3>♿ Accessible</h3>
+                <p>Semantic HTML5 with ARIA support</p>
+            </div>
+        </div>
+        
+        <div class="landing-actions">
+            {% if session.get('user_id') %}
+                <a href="{{ url_for('feed.home') }}" class="btn btn-primary btn-lg">Go to Home Feed</a>
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Get Started</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Login</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.landing-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 120px);
+    padding: var(--spacing-2xl);
+}
+
+.landing-hero {
+    text-align: center;
+    max-width: 900px;
+}
+
+.landing-title {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-lg);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.landing-subtitle {
+    font-size: var(--font-size-xl);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.landing-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.feature {
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    transition: all var(--transition-base);
+}
+
+.feature:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glow);
+}
+
+.feature h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--color-primary);
+}
+
+.landing-actions {
+    display: flex;
+    gap: var(--spacing-lg);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-lg {
+    padding: var(--spacing-md) var(--spacing-2xl);
+    font-size: var(--font-size-lg);
+}
+
+@media (max-width: 768px) {
+    .landing-title {
+        font-size: 2.5rem;
+    }
+    
+    .landing-features {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+

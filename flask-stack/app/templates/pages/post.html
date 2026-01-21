@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.author.display_name }}'s Post - Social Audit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="feed-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('feed.home') }}" class="sidebar-link">
+                    <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Home
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Post Detail -->
+        <section class="feed-main">
+            <header class="feed-header">
+                <h2>Post</h2>
+            </header>
+
+            <!-- Main Post -->
+            {% include 'components/post_card.html' %}
+
+            <!-- Reply Form -->
+            <section class="compose-section">
+                <h3>Reply to @{{ post.author.username }}</h3>
+                <form method="POST" action="{{ url_for('posts.create_post') }}" class="compose-form">
+                    <input type="hidden" name="parent_id" value="{{ post.id }}">
+                    
+                    <div class="compose-header">
+                        <img src="https://via.placeholder.com/48" alt="Your avatar" class="compose-avatar" width="48" height="48">
+                    </div>
+                    
+                    <div class="compose-body">
+                        <textarea 
+                            name="content" 
+                            placeholder="Post your reply..."
+                            maxlength="280" 
+                            required
+                            rows="3"
+                        ></textarea>
+                        
+                        <div class="compose-footer">
+                            <div class="char-counter">
+                                <span class="char-count">0</span>/280
+                            </div>
+                            <button type="submit" class="btn btn-primary">Reply</button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Replies Thread -->
+            {% if replies %}
+            <div class="posts-feed">
+                <h3>Replies</h3>
+                {% for reply in replies %}
+                    {% set post = reply %}
+                    {% include 'components/post_card.html' %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No replies yet. Be the first to reply!</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

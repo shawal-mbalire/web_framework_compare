@@ -22,6 +22,7 @@
                         <li><a href="{{ url_for('feed.home') }}" class="nav-link">Home</a></li>
                         <li><a href="{{ url_for('feed.explore') }}" class="nav-link">Explore</a></li>
                         <li><a href="{{ url_for('feed.trending') }}" class="nav-link">Trending</a></li>
+                        <li><button type="button" class="btn btn-primary" onclick="document.getElementById('compose-dialog').showModal()">Compose</button></li>
                         <li>
                             <details class="user-menu">
                                 <summary class="user-menu-trigger">
@@ -45,6 +46,11 @@
             </nav>
         </div>
     </header>
+    
+    {% if session.get('user_id') %}
+    <!-- Compose Dialog -->
+    {% include 'components/compose_dialog.html' %}
+    {% endif %}
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}

@@ -1,0 +1,139 @@
+<!-- Advanced CSS-Only Tabs (No JavaScript) -->
+<!-- Uses :target pseudo-class for state management -->
+
+<style>
+.tabs-container {
+    margin: var(--spacing-lg) 0;
+}
+
+.tabs-nav {
+    display: flex;
+    gap: var(--spacing-sm);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.tab-link {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all var(--transition-fast);
+}
+
+.tab-link:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-tertiary);
+}
+
+/* Active tab using :target */
+.tab-content {
+    display: none;
+    padding: var(--spacing-lg);
+    animation: fadeIn var(--transition-base);
+}
+
+.tab-content:target,
+.tab-content:first-of-type {
+    display: block;
+}
+
+/* Hide first tab if another is targeted */
+.tab-content:target ~ .tab-content:first-of-type {
+    display: none;
+}
+
+/* Active link styling */
+.tab-link[href="#for-you"]:has(+ * #for-you:target),
+.tab-link[href="#for-you"]:not(:has(~ * .tab-content:target)) {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.tab-link[href="#following"]:has(+ * #following:target) {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.tab-link[href="#trending"]:has(+ * #trending:target) {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+</style>
+
+<div class="tabs-container">
+    <nav class="tabs-nav">
+        <a href="#for-you" class="tab-link">For You</a>
+        <a href="#following" class="tab-link">Following</a>
+        <a href="#trending" class="tab-link">Trending</a>
+    </nav>
+    
+    <div id="for-you" class="tab-content">
+        <h3>For You</h3>
+        <p>Algorithmic feed based on your interests</p>
+        <!-- Posts would go here -->
+    </div>
+    
+    <div id="following" class="tab-content">
+        <h3>Following</h3>
+        <p>Posts from people you follow</p>
+        <!-- Posts would go here -->
+    </div>
+    
+    <div id="trending" class="tab-content">
+        <h3>Trending</h3>
+        <p>What's popular right now</p>
+        <!-- Posts would go here -->
+    </div>
+</div>
+
+<!-- Alternative: Radio button tabs (persists across navigation) -->
+<style>
+.radio-tabs {
+    margin: var(--spacing-lg) 0;
+}
+
+.radio-tabs input[type="radio"] {
+    display: none;
+}
+
+.radio-tabs label {
+    display: inline-block;
+    padding: var(--spacing-md) var(--spacing-lg);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.radio-tabs input[type="radio"]:checked + label {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.radio-tab-content {
+    display: none;
+    padding: var(--spacing-lg);
+}
+
+#tab1:checked ~ .radio-tab-content:nth-of-type(1),
+#tab2:checked ~ .radio-tab-content:nth-of-type(2),
+#tab3:checked ~ .radio-tab-content:nth-of-type(3) {
+    display: block;
+}
+</style>
+
+<div class="radio-tabs">
+    <input type="radio" name="tabs" id="tab1" checked>
+    <label for="tab1">All Posts</label>
+    
+    <input type="radio" name="tabs" id="tab2">
+    <label for="tab2">Media</label>
+    
+    <input type="radio" name="tabs" id="tab3">
+    <label for="tab3">Likes</label>
+    
+    <div class="radio-tab-content">All posts content</div>
+    <div class="radio-tab-content">Media content</div>
+    <div class="radio-tab-content">Likes content</div>
+</div>

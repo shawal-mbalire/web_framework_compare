@@ -1,0 +1,39 @@
+<!-- Reply Dialog Component -->
+<dialog id="reply-dialog-{{ post.id }}" class="modal-dialog">
+    <form method="POST" action="{{ url_for('posts.create_post') }}" class="dialog-form">
+        <input type="hidden" name="parent_id" value="{{ post.id }}">
+        
+        <header class="dialog-header">
+            <h2>Reply to @{{ post.author.username }}</h2>
+            <button type="button" class="btn-close" onclick="document.getElementById('reply-dialog-{{ post.id }}').close()" aria-label="Close">&times;</button>
+        </header>
+        
+        <div class="dialog-body">
+            <div class="original-post">
+                <div class="post-mini">
+                    <img src="{{ post.author.avatar }}" alt="{{ post.author.username }}" class="avatar-small">
+                    <div>
+                        <strong>{{ post.author.display_name }}</strong> @{{ post.author.username }}
+                        <p>{{ post.content[:100] }}{% if post.content|length > 100 %}...{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <textarea 
+                name="content" 
+                placeholder="Write your reply..." 
+                required 
+                maxlength="280" 
+                rows="4"
+                class="form-textarea"
+                oninput="this.nextElementSibling.textContent = this.value.length + '/280'"
+            ></textarea>
+            <div class="char-counter">0/280</div>
+        </div>
+        
+        <footer class="dialog-footer">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('reply-dialog-{{ post.id }}').close()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Reply</button>
+        </footer>
+    </form>
+</dialog>
