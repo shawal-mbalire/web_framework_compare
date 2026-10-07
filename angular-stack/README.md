@@ -1,255 +1,48 @@
-# Angular Stack (2026 Edition)
+# Angular Stack
 
-**🚀 Angular 21 · Signals · Zoneless Mode · Standalone Components**
+**Angular 22** single-page app — standalone components, **signals** for all state,
+**zoneless** change detection, the built-in control flow (`@if` / `@for`), lazy routes —
+styled with **Tailwind CSS v4**. Unlike the other stacks, Angular has no server runtime of
+its own here, so `server/` contains a small **Bun + Express 5** JSON API (postgres.js, Zod,
+bcrypt, JWT cookie) that also serves the production build.
 
-This is the Angular 21 implementation showcasing bleeding-edge 2026 features.
+## How it fits together
 
-## 🔥 2026 Bleeding-Edge Features
+| Concern | Implementation |
+|---|---|
+| Change detection | `provideZonelessChangeDetection()` — no zone.js in the bundle |
+| State | `AuthService.currentUser`, `NotificationService.unreadCount`, component `signal()`s |
+| Optimistic UI | `PostCardComponent` uses `linkedSignal()` per field: resets when the `post` input changes, flipped locally on click, rolled back on error |
+| Infinite scroll | `FeedComponent` observes a `viewChild` sentinel inside an `effect()`; cursor pagination |
+| Live notifications | `NotificationService` opens an `EventSource` in an `effect()` tied to the current user |
+| Auth | httpOnly JWT cookie set by the API; restored with `provideAppInitializer` before first render |
+| API | `server/index.ts`: `/api/auth/*`, `/api/feed`, `/api/posts`, likes, retweets, notifications + SSE stream, `/health` |
 
-### 1. **Signal-Based Reactivity**
-Replaces RxJS for component state management:
+Not built yet: explore, profile, replies.
 
-```typescript
-import { signal, computed } from '@angular/core';
-
-export class NotificationService {
-  // Signal (replaces BehaviorSubject!)
-  notifications = signal<Notification[]>([]);
-
-  // Computed signal (auto-updates)
-  unreadCount = computed(() => {
-    return this.notifications().filter(n => !n.is_read).length;
-  });
-
-  // Update signal
-  addNotification(notification: Notification) {
-    this.notifications.update(notifications => [notification, ...notifications]);
-  }
-}
-```
-
-**Benefits:**
-- No subscription management
-- Auto-cleanup (no memory leaks)
-- Fine-grained reactivity (only affected components re-render)
-- Simpler mental model than RxJS
-
-### 2. **Zoneless Mode**
-Removes `zone.js` for ~30KB bundle savings and better performance:
-
-```json
-// tsconfig.json
-{
-  "angularCompilerOptions": {
-    "zoneless": true
-  }
-}
-```
-
-**How it works:**
-- Angular 21 uses Signals to detect changes
-- No monkey-patching of async APIs
-- Manual change detection when needed with `inject(ChangeDetectorRef).markForCheck()`
-
-### 3. **Standalone Components (Default)**
-No more NgModules:
-
-```typescript
-@Component({
-  selector: 'app-feed',
-  standalone: true,  // Default in Angular 21
-  imports: [CommonModule, PostCardComponent],
-  template: `...`
-})
-export class FeedComponent {}
-```
-
-### 4. **Signal Forms**
-Forms integrated with Signals:
-
-```typescript
-export class ComposeComponent {
-  // Character count signal computed from form value
-  charCount = signal(0);
-  
-  form = new FormGroup({
-    content: new FormControl('', [Validators.maxLength(280)])
-  });
-
-  constructor() {
-    this.form.get('content')?.valueChanges.subscribe(value => {
-      this.charCount.set(value?.length || 0);
-    });
-  }
-}
-```
-
-### 5. **Input/Output Signals**
-Replaces `@Input()` and `@Output()` decorators:
-
-```typescript
-export class PostCardComponent {
-  // Input signal (replaces @Input)
-  post = input.required<Post>();
-  
-  // Output signal (replaces @Output)
-  postCreated = output<Post>();
-  
-  onClick() {
-    this.postCreated.emit(this.post());
-  }
-}
-```
-
-### 6. **Auto-Cleanup Injectors**
-Effect cleanup happens automatically:
-
-```typescript
-constructor() {
-  effect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      this.connectSSE();  // Auto-cleanup when effect re-runs!
-    }
-  });
-}
-```
-
-### 7. **Template Spread Operators**
-Props spreading like React:
-
-```html
-<!-- Future Angular 21 feature -->
-<app-user [...userData] />
-```
-
-## 🏗️ Architecture
-
-```
-src/
-├── app/
-│   ├── core/                 # Singleton services
-│   │   ├── services/
-│   │   │   ├── auth.service.ts
-│   │   │   ├── notification.service.ts
-│   │   │   └── post.service.ts
-│   │   ├── models/
-│   │   │   └── post.model.ts
-│   │   └── components/
-│   │       └── header/
-│   ├── shared/               # Shared components
-│   │   └── components/
-│   │       ├── compose/
-│   │       └── post-card/
-│   └── features/             # Lazy-loaded routes
-│       ├── feed/
-│       ├── explore/
-│       ├── notifications/
-│       └── profile/
-```
-
-## 📦 Installation
+## Running locally
 
 ```bash
-# Install dependencies with Bun (10x faster than npm)
+# Database (from the repo root)
+createdb social_audit && psql social_audit < ../schema.sql
+
+cd angular-stack
 bun install
-
-# Start dev server
-bun run start
-
-# Build for production
-bun run build
+cp .env.example .env
+bun run api        # API on http://localhost:4300
+bun run start      # ng serve on http://localhost:4200, proxies /api → 4300
 ```
 
-## 🎯 Key Patterns
+Production: `bun run build && bun run serve:prod` (API + SPA on port 4200).
 
-### Optimistic UI with Signals
-```typescript
-async toggleLike() {
-  const previousValue = this.isLiked();
-  
-  // Optimistic update
-  this.isLiked.set(!previousValue);
-  this.likesCount.update(count => count + (previousValue ? -1 : 1));
-  
-  try {
-    await this.postService.likePost(this.post().id);
-  } catch (error) {
-    // Rollback on error
-    this.isLiked.set(previousValue);
-    this.likesCount.update(count => count + (previousValue ? 1 : -1));
-  }
-}
-```
+Seed accounts: `alice`, `bob`, `carol`, `dave`, `erin` — password `password123`.
 
-### Real-Time SSE with Effect
-```typescript
-export class NotificationService {
-  private eventSource: EventSource | null = null;
-  
-  constructor() {
-    effect(() => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        this.connectSSE();
-      } else {
-        this.disconnectSSE();
-      }
-    });
-  }
-  
-  private connectSSE() {
-    this.eventSource = new EventSource('/api/notifications/stream');
-    this.eventSource.addEventListener('notification', (event) => {
-      const notification = JSON.parse(event.data);
-      this.notifications.update(notifications => [notification, ...notifications]);
-    });
-  }
-}
-```
+> The scripts run the Angular CLI with `bun --bun` so they work regardless of the local
+> Node.js version (the Angular 22 CLI requires Node ≥ 22.22.3).
 
-## 🔬 Performance
-
-- **Bundle Size (Zoneless):** ~150KB gzipped
-- **Time to Interactive:** ~1.2s
-- **Change Detection:** O(n) with Signals vs O(n²) with Zone.js
-- **Memory:** No subscription leaks with auto-cleanup
-
-## 🚀 Deployment
+## Scripts
 
 ```bash
-# Build optimized production bundle
-bun run build
-
-# Preview production build
-bun run preview
-
-# Deploy to Vercel/Netlify
-# Just point to dist/social-audit-angular/browser
+bun run type-check   # tsc for the app and for server/
+bun run build        # ng build (strict templates) → dist/social-audit-angular
 ```
-
-## 📊 Comparison with Other Stacks
-
-| Feature | Angular 21 | React 19 | Svelte 5 |
-|---------|-----------|----------|----------|
-| Reactive Primitive | Signals | Hooks | Runes |
-| Change Detection | Fine-grained | Virtual DOM | Compiled |
-| Forms | Template-driven + Reactive | Controlled | Bindings |
-| Type Safety | E2E TypeScript | PropTypes/TS | TypeScript |
-| Bundle Size (Zoneless) | ~150KB | ~280KB | ~80KB |
-
-## 🧪 Testing
-
-```bash
-# Run unit tests
-bun run test
-
-# Run e2e tests
-bun run e2e
-```
-
-## 📖 Learn More
-
-- [Angular Signals Guide](https://angular.dev/guide/signals)
-- [Zoneless Angular](https://angular.dev/guide/experimental/zoneless)
-- [Standalone Components](https://angular.dev/guide/components/importing)

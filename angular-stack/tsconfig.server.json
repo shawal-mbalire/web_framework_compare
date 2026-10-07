@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/server",
+    "lib": ["ES2022"],
+    "types": ["bun"],
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "include": ["server/**/*.ts"]
+}

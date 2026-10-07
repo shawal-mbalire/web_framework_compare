@@ -1,91 +1,81 @@
 /**
- * Compose Component with Signal Forms
- * Angular 21 - Demonstrates new Signal-based forms
+ * Compose box: reactive form + signals (character count via toSignal).
  */
-
-import { Component, signal, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, inject, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PostService } from '@core/services/post.service';
-import { Post } from '@core/models/post.model';
+
+const MAX_LENGTH = 280;
 
 @Component({
   selector: 'app-compose',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   template: `
-    <div class="bg-white rounded-lg p-4 border">
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="rounded-lg border bg-white p-4">
+      <form (submit)="$event.preventDefault(); onSubmit()">
         <textarea
-          formControlName="content"
+          [formControl]="content"
           placeholder="What's happening?"
-          class="w-full border rounded p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Post content"
+          class="w-full resize-none rounded border p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           rows="3"
         ></textarea>
 
-        <!-- Character count (using Signal) -->
-        <div class="flex justify-between items-center mt-2">
-          <span
-            class="text-sm"
-            [class.text-red-500]="charCount() > 280"
-            [class.text-gray-500]="charCount() <= 280"
-          >
-            {{ charCount() }}/280
+        <div class="mt-2 flex items-center justify-between">
+          <span class="text-sm" [class.text-red-500]="charCount() > maxLength" [class.text-gray-500]="charCount() <= maxLength">
+            {{ charCount() }}/{{ maxLength }}
           </span>
 
           <button
             type="submit"
-            [disabled]="!form.valid || posting()"
-            class="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="!canSubmit()"
+            class="rounded-full bg-blue-500 px-6 py-2 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {{ posting() ? 'Posting...' : 'Post' }}
           </button>
         </div>
+
+        @if (error()) {
+          <p class="mt-2 text-sm text-red-500">{{ error() }}</p>
+        }
       </form>
     </div>
   `,
-  styles: [],
 })
 export class ComposeComponent {
   private postService = inject(PostService);
 
-  // Output event (Angular 21 uses output() instead of @Output)
-  postCreated = output<Post>();
+  readonly maxLength = MAX_LENGTH;
+  readonly postCreated = output<string>();
 
-  // Signal for posting state
-  posting = signal(false);
-
-  // Signal for character count (computed from form value)
-  charCount = signal(0);
-
-  // Signal Form (Angular 21 feature!)
-  form = new FormGroup({
-    content: new FormControl('', [Validators.required, Validators.maxLength(280)]),
+  readonly content = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(MAX_LENGTH)],
   });
 
-  constructor() {
-    // Watch form value changes and update charCount signal
-    this.form.get('content')?.valueChanges.subscribe((value) => {
-      this.charCount.set(value?.length || 0);
-    });
-  }
+  private readonly value = toSignal(this.content.valueChanges, { initialValue: '' });
+  readonly charCount = computed(() => this.value().trim().length);
+  readonly posting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly canSubmit = computed(
+    () => this.charCount() > 0 && this.charCount() <= MAX_LENGTH && !this.posting()
+  );
 
   async onSubmit(): Promise<void> {
-    if (!this.form.valid || this.posting()) return;
+    if (!this.canSubmit()) return;
 
     this.posting.set(true);
+    this.error.set(null);
     try {
-      const post = await this.postService.createPost({
-        content: this.form.value.content || '',
-      });
-      this.postCreated.emit(post);
-      this.form.reset();
-    } catch (error) {
-      console.error('Failed to create post:', error);
+      const { id } = await this.postService.createPost(this.content.value.trim());
+      this.content.reset();
+      this.postCreated.emit(id);
+    } catch (err) {
+      this.error.set(err instanceof HttpErrorResponse ? (err.error?.error ?? err.message) : 'Failed to post');
     } finally {
       this.posting.set(false);
     }
   }
 }
-
-import { inject } from '@angular/core';
