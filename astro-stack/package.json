@@ -2,33 +2,32 @@
   "name": "social-audit-astro",
   "type": "module",
   "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro check && astro build",
+    "start": "node ./dist/server/entry.mjs",
+    "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "analyze": "astro build --analyze"
+    "type-check": "astro check && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "bun run type-check",
+    "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.0",
-    "@astrojs/node": "^8.3.0",
-    "@astrojs/svelte": "^5.7.0",
-    "@astrojs/tailwind": "^5.1.0",
-    "@tanstack/svelte-query": "^5.59.0",
-    "astro": "^6.0.0",
-    "postgres": "^3.4.4",
-    "svelte": "^5.0.0",
-    "tailwindcss": "^3.4.13",
-    "typescript": "^5.6.0",
-    "zod": "^3.23.8",
-    "jose": "^5.9.0"
+    "@astrojs/node": "^11.1.7",
+    "@astrojs/svelte": "^9.0.1",
+    "@tanstack/svelte-query": "^6.3.1",
+    "astro": "^7.3.6",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.1.0",
+    "postgres": "^3.4.9",
+    "svelte": "^5.57.2"
   },
   "devDependencies": {
-    "@types/bun": "^1.1.10",
-    "@types/node": "^22.7.0",
-    "prettier": "^3.3.3",
-    "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-svelte": "^3.2.6"
+    "@astrojs/check": "^0.9.10",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22",
+    "svelte-check": "^4",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
   }
 }

@@ -1,19 +1,26 @@
 ---
 /**
- * Sidebar Component (Static)
- * No client-side JS needed for navigation
+ * Sidebar Component (static: ships zero JS)
  */
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/login', label: 'Account' },
+];
+const current = Astro.url.pathname;
 ---
 
-<nav class="bg-white rounded-lg p-4 space-y-2">
-  <a href="/" class="block px-4 py-2 rounded hover:bg-gray-100 font-semibold">Home</a>
-  <a href="/explore" class="block px-4 py-2 rounded hover:bg-gray-100">Explore</a>
-  <a href="/notifications" class="block px-4 py-2 rounded hover:bg-gray-100">Notifications</a>
-  <a href="/profile" class="block px-4 py-2 rounded hover:bg-gray-100">Profile</a>
-</nav>
-
-<style>
-  a.active {
-    @apply bg-blue-50 text-blue-600;
+<nav class="space-y-1 rounded-lg border bg-white p-4">
+  {
+    links.map(({ href, label }) => (
+      <a
+        href={href}
+        class:list={[
+          'block rounded px-4 py-2 hover:bg-gray-100',
+          { 'bg-blue-50 font-semibold text-blue-600': current === href },
+        ]}
+      >
+        {label}
+      </a>
+    ))
   }
-</style>
+</nav>

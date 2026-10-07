@@ -1,51 +1,55 @@
 <!--
-  Compose Component (Svelte Island)
-  Client-side interactivity for creating posts
+  Compose island: creates a post via an Astro Action, then refreshes the feed.
 -->
 <script lang="ts">
   import { actions } from 'astro:actions';
-  
-  let content = '';
-  let posting = false;
-  
-  $: charCount = content.length;
-  $: isValid = charCount > 0 && charCount <= 280;
-  
-  async function handleSubmit() {
-    if (!isValid || posting) return;
-    
-    posting = true;
-    try {
-      await actions.createPost({ content });
+  import { createMutation, useQueryClient } from '@tanstack/svelte-query';
+  import { FEED_KEY } from '@/lib/feedCache';
+  import { POST_MAX_LENGTH } from '@/lib/schemas';
+
+  const queryClient = useQueryClient();
+
+  let content = $state('');
+  const charCount = $derived(content.trim().length);
+  const isValid = $derived(charCount > 0 && charCount <= POST_MAX_LENGTH);
+
+  const createPost = createMutation(() => ({
+    mutationFn: (text: string) => actions.createPost.orThrow({ content: text }),
+    onSuccess: () => {
       content = '';
-      // TODO: Invalidate feed query
-    } catch (error) {
-      console.error('Failed to create post:', error);
-    } finally {
-      posting = false;
-    }
+      return queryClient.invalidateQueries({ queryKey: FEED_KEY });
+    },
+  }));
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    if (isValid && !createPost.isPending) createPost.mutate(content);
   }
 </script>
 
-<div class="bg-white rounded-lg p-4 border">
-  <form on:submit|preventDefault={handleSubmit}>
+<div class="rounded-lg border bg-white p-4">
+  <form onsubmit={handleSubmit}>
     <textarea
       bind:value={content}
       placeholder="What's happening?"
-      class="w-full border rounded p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Post content"
+      class="w-full resize-none rounded border p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
       rows="3"
-    />
-    <div class="flex justify-between items-center mt-2">
-      <span class="text-sm" class:text-red-500={charCount > 280} class:text-gray-500={charCount <= 280}>
-        {charCount}/280
+    ></textarea>
+    <div class="mt-2 flex items-center justify-between">
+      <span class={['text-sm', charCount > POST_MAX_LENGTH ? 'text-red-500' : 'text-gray-500']}>
+        {charCount}/{POST_MAX_LENGTH}
       </span>
       <button
         type="submit"
-        disabled={!isValid || posting}
-        class="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={!isValid || createPost.isPending}
+        class="rounded-full bg-blue-500 px-6 py-2 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {posting ? 'Posting...' : 'Post'}
+        {createPost.isPending ? 'Posting...' : 'Post'}
       </button>
     </div>
+    {#if createPost.isError}
+      <p class="mt-2 text-sm text-red-500">{createPost.error?.message}</p>
+    {/if}
   </form>
 </div>

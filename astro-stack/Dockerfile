@@ -3,34 +3,32 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lockb* ./
-
-# Install dependencies with Bun
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-# Copy source code
 COPY . .
-
-# Build for production
 RUN bun run build
 
-# Production stage
-FROM oven/bun:1-slim
+# Production dependencies only
+FROM oven/bun:1 AS deps
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
+
+# Runtime: the @astrojs/node standalone server
+FROM node:22-slim
 
 WORKDIR /app
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=4321
 
-# Copy built assets from builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
 
-# Expose port
+USER node
 EXPOSE 4321
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD bun -e "fetch('http://localhost:4321/health').then(r => r.ok ? process.exit(0) : process.exit(1))" || exit 1
+  CMD node -e "fetch('http://localhost:4321/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-# Run Astro in production mode
-CMD ["bun", "run", "preview", "--host", "0.0.0.0"]
+CMD ["node", "./dist/server/entry.mjs"]

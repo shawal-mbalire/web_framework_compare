@@ -1,53 +1,25 @@
 ---
 /**
- * Home page - Feed view
- * SSR with Svelte islands for interactivity
+ * Home page: the first feed page is rendered on the server,
+ * then the Svelte island takes over for infinite scroll and mutations.
  */
 import Layout from '@/layouts/Layout.astro';
-import Feed from '@/components/Feed.svelte';
-import Compose from '@/components/Compose.svelte';
-import Sidebar from '@/components/Sidebar.svelte';
-import { sql } from '@/lib/db';
+import FeedApp from '@/components/FeedApp.svelte';
+import Sidebar from '@/components/Sidebar.astro';
+import { getFeed } from '@/lib/posts';
 
-// Server-side data fetching
-// This runs at build time (SSG) or request time (SSR)
-const currentUser = null; // TODO: Get from session
-
-// Fetch initial feed data
-const initialPosts = []; // TODO: Fetch from database
-
+const user = Astro.locals.user;
+const initialPage = await getFeed(user?.id ?? null, null);
 ---
 
 <Layout title="Home / Social Audit">
-  <div class="min-h-screen">
-    <!-- Header -->
-    <header class="bg-white border-b sticky top-0 z-10">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-blue-600">Social Audit</h1>
-        <div class="flex gap-4 items-center">
-          {currentUser ? (
-            <span class="font-semibold">@{currentUser.username}</span>
-          ) : (
-            <a href="/login" class="text-blue-600 hover:underline">Login</a>
-          )}
-        </div>
-      </div>
-    </header>
+  <main class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-3">
+    <aside class="hidden md:block">
+      <Sidebar />
+    </aside>
 
-    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Sidebar (static Astro component) -->
-      <aside class="hidden md:block">
-        <Sidebar />
-      </aside>
-
-      <!-- Feed (Svelte island for interactivity) -->
-      <div class="md:col-span-2 space-y-4">
-        <!-- Compose (Svelte island) -->
-        <Compose client:load />
-
-        <!-- Feed (Svelte island with initial data from SSR) -->
-        <Feed client:load initialPosts={initialPosts} />
-      </div>
-    </main>
-  </div>
+    <div class="md:col-span-2">
+      <FeedApp client:load initialPage={initialPage} loggedIn={Boolean(user)} />
+    </div>
+  </main>
 </Layout>
