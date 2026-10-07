@@ -1,53 +1,49 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { getFeedFn } from '~/lib/server';
+import { feedQueryOptions } from '~/lib/queries';
 import PostCard from './PostCard';
 
-export default function Feed() {
+export default function Feed({ loggedIn }: { loggedIn: boolean }) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage, isError } =
+    useInfiniteQuery(feedQueryOptions);
 
-  const feedQuery = useInfiniteQuery({
-    queryKey: ['feed'],
-    queryFn: ({ pageParam }) => getFeedFn(pageParam),
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-  });
+  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
-  const posts = feedQuery.data?.pages.flatMap((page) => page.posts) ?? [];
-
-  // Infinite scroll observer
+  // Infinite scroll: load the next page when the sentinel scrolls into view
   useEffect(() => {
-    if (!loadMoreRef.current) return;
-
+    const node = loadMoreRef.current;
+    if (!node) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
-          feedQuery.fetchNextPage();
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
         }
       },
-      { threshold: 0.1 }
+      { rootMargin: '200px' }
     );
-
-    observer.observe(loadMoreRef.current);
+    observer.observe(node);
     return () => observer.disconnect();
-  }, [feedQuery]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="space-y-4">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.entryId} post={post} loggedIn={loggedIn} />
       ))}
 
-      {feedQuery.hasNextPage && (
-        <div ref={loadMoreRef} className="text-center py-4">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      {posts.length === 0 && !isError && (
+        <p className="py-8 text-center text-gray-500">No posts yet.</p>
+      )}
+
+      {hasNextPage && (
+        <div ref={loadMoreRef} className="py-4 text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500" />
         </div>
       )}
 
-      {feedQuery.isError && (
-        <div className="text-center text-red-500 py-4">
-          Failed to load feed. Please try again.
-        </div>
+      {isError && (
+        <div className="py-4 text-center text-red-500">Failed to load feed. Please try again.</div>
       )}
     </div>
   );

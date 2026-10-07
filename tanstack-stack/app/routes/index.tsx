@@ -1,31 +1,40 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
 import Compose from '~/components/Compose';
 import Feed from '~/components/Feed';
+import { currentUserQueryOptions, feedQueryOptions } from '~/lib/queries';
 
-export default function Home() {
+export const Route = createFileRoute('/')({
+  // Runs on the server for the first request: data is streamed with the HTML
+  loader: ({ context: { queryClient } }) =>
+    Promise.all([
+      queryClient.ensureInfiniteQueryData(feedQueryOptions),
+      queryClient.ensureQueryData(currentUserQueryOptions),
+    ]),
+  component: Home,
+});
+
+function Home() {
+  const [, user] = Route.useLoaderData();
   return (
-    <main className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Sidebar */}
+    <main className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-3">
       <aside className="hidden md:block">
-        <nav className="bg-white rounded-lg p-4 space-y-2">
-          <a href="/" className="block px-4 py-2 rounded bg-blue-50 text-blue-600 font-semibold">
+        <nav className="space-y-1 rounded-lg border bg-white p-4">
+          <Link
+            to="/"
+            className="block rounded px-4 py-2 hover:bg-gray-100"
+            activeProps={{ className: 'bg-blue-50 font-semibold text-blue-600' }}
+          >
             Home
-          </a>
-          <a href="/explore" className="block px-4 py-2 rounded hover:bg-gray-100">
-            Explore
-          </a>
-          <a href="/notifications" className="block px-4 py-2 rounded hover:bg-gray-100">
-            Notifications
-          </a>
-          <a href="/profile" className="block px-4 py-2 rounded hover:bg-gray-100">
-            Profile
-          </a>
+          </Link>
+          <Link to="/login" className="block rounded px-4 py-2 hover:bg-gray-100">
+            Account
+          </Link>
         </nav>
       </aside>
 
-      {/* Feed */}
-      <div className="md:col-span-2 space-y-4">
-        <Compose />
-        <Feed />
+      <div className="space-y-4 md:col-span-2">
+        {user && <Compose />}
+        <Feed loggedIn={Boolean(user)} />
       </div>
     </main>
   );

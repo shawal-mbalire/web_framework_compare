@@ -1,50 +1,38 @@
-import { createRootRoute, createRouter, createRoute } from '@tanstack/react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
-import React from 'react';
-import RootLayout from '~/components/RootLayout';
-import Home from '~/routes/index';
+import { QueryClient } from '@tanstack/react-query';
+import { createRouter } from '@tanstack/react-router';
+import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
+import { routeTree } from './routeTree.gen';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      gcTime: 5 * 60 * 1000, // 5 minutes
+/**
+ * Called once per SSR request and once in the browser, so every request gets
+ * its own router and QueryClient (no cache shared between users).
+ */
+export function getRouter() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000,
+        gcTime: 5 * 60 * 1000,
+      },
     },
-  },
-});
+  });
 
-// Root route
-const rootRoute = createRootRoute({
-  component: () => (
-    <QueryClientProvider client={queryClient}>
-      <RootLayout />
-      <ReactQueryDevtools initialIsOpen={false} />
-      <TanStackRouterDevtools position="bottom-right" />
-    </QueryClientProvider>
-  ),
-});
+  const router = createRouter({
+    routeTree,
+    context: { queryClient },
+    defaultPreload: 'intent',
+    scrollRestoration: true,
+  });
 
-// Index route
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  component: Home,
-});
+  // Dehydrates the server QueryClient into the HTML stream, rehydrates it in the
+  // browser, and wraps the app in <QueryClientProvider>.
+  setupRouterSsrQueryIntegration({ router, queryClient });
 
-// Route tree
-const routeTree = rootRoute.addChildren([indexRoute]);
+  return router;
+}
 
-// Create router
-export const router = createRouter({
-  routeTree,
-  defaultPreload: 'intent',
-});
-
-// Type safety
 declare module '@tanstack/react-router' {
   interface Register {
-    router: typeof router;
+    router: ReturnType<typeof getRouter>;
   }
 }

@@ -10,16 +10,16 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "baseUrl": ".",
+    "verbatimModuleSyntax": true,
+    "types": ["node", "vite/client"],
     "paths": {
       "~/*": ["./app/*"]
     }
   },
-  "include": ["app/**/*", "app.config.ts"],
-  "exclude": ["node_modules", ".vinxi"]
+  "include": ["app/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", ".output", "dist"]
 }
