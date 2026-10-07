@@ -29,8 +29,8 @@
                                     @{{ session.get('username', 'User') }}
                                 </summary>
                                 <div class="user-menu-content">
-                                    <a href="/users/{{ session.get('username') }}">Profile</a>
-                                    <a href="/notifications">Notifications</a>
+                                    <a href="{{ url_for('users.profile', username=session.get('username')) }}">Profile</a>
+                                    <a href="{{ url_for('notifications.list_notifications') }}">Notifications</a>
                                     <a href="/settings">Settings</a>
                                     <form method="POST" action="{{ url_for('auth.logout') }}">
                                         <button type="submit" class="btn-logout">Logout</button>

@@ -1,0 +1,50 @@
+---
+/**
+ * Login and registration via Astro form actions:
+ * plain HTML forms that work without JavaScript.
+ */
+import { actions, isInputError } from 'astro:actions';
+import Layout from '@/layouts/Layout.astro';
+
+const login = Astro.getActionResult(actions.login);
+const register = Astro.getActionResult(actions.register);
+const logout = Astro.getActionResult(actions.logout);
+
+if ((login && !login.error) || (register && !register.error)) {
+  return Astro.redirect('/');
+}
+
+const loginError = login?.error?.message;
+const registerErrors = register?.error && isInputError(register.error) ? register.error.fields : {};
+const registerError = register?.error && !isInputError(register.error) ? register.error.message : null;
+
+const input = 'w-full rounded border p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none';
+const button = 'w-full rounded-full bg-blue-500 px-6 py-2 text-white hover:bg-blue-600';
+---
+
+<Layout title="Log in / Social Audit">
+  <main class="mx-auto grid max-w-3xl gap-6 px-4 py-10 md:grid-cols-2">
+    {logout && !logout.error && <p class="text-green-700 md:col-span-2">You have been logged out.</p>}
+
+    <form method="POST" action={actions.login} class="space-y-3 rounded-lg border bg-white p-6">
+      <h1 class="text-xl font-bold">Log in</h1>
+      <input class={input} name="username" placeholder="Username or email" autocomplete="username" required />
+      <input class={input} name="password" type="password" placeholder="Password" autocomplete="current-password" required />
+      {loginError && <p class="text-sm text-red-500">{loginError}</p>}
+      <button class={button}>Log in</button>
+      <p class="text-sm text-gray-500">Demo accounts: alice, bob, carol… password <code>password123</code></p>
+    </form>
+
+    <form method="POST" action={actions.register} class="space-y-3 rounded-lg border bg-white p-6">
+      <h2 class="text-xl font-bold">Create account</h2>
+      <input class={input} name="username" placeholder="Username" autocomplete="username" required />
+      {registerErrors.username && <p class="text-sm text-red-500">{registerErrors.username.join(', ')}</p>}
+      <input class={input} name="email" type="email" placeholder="Email" autocomplete="email" required />
+      {registerErrors.email && <p class="text-sm text-red-500">{registerErrors.email.join(', ')}</p>}
+      <input class={input} name="password" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" minlength="8" required />
+      {registerErrors.password && <p class="text-sm text-red-500">{registerErrors.password.join(', ')}</p>}
+      {registerError && <p class="text-sm text-red-500">{registerError}</p>}
+      <button class={button}>Sign up</button>
+    </form>
+  </main>
+</Layout>

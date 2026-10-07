@@ -1,91 +1,111 @@
 /**
- * Feed Component using Signal Forms
- * Angular 21 Zoneless Mode
+ * Feed page: signal state + cursor-based infinite scroll.
  */
-
-import { Component, signal, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { PostCardComponent } from '@shared/components/post-card/post-card.component';
-import { ComposeComponent } from '@shared/components/compose/compose.component';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import type { Post } from '@core/models/post.model';
+import { AuthService } from '@core/services/auth.service';
 import { PostService } from '@core/services/post.service';
-import { Post } from '@core/models/post.model';
+import { ComposeComponent } from '@shared/components/compose/compose.component';
+import { PostCardComponent } from '@shared/components/post-card/post-card.component';
 
 @Component({
   selector: 'app-feed',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PostCardComponent, ComposeComponent],
+  imports: [RouterLink, RouterLinkActive, PostCardComponent, ComposeComponent],
   template: `
-    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Sidebar -->
+    <main class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-3">
       <aside class="hidden md:block">
-        <nav class="bg-white rounded-lg p-4 space-y-2">
-          <a routerLink="/" class="block px-4 py-2 rounded bg-blue-50 text-blue-600 font-semibold">
-            Home
-          </a>
-          <a routerLink="/explore" class="block px-4 py-2 rounded hover:bg-gray-100">
-            Explore
-          </a>
-          <a routerLink="/notifications" class="block px-4 py-2 rounded hover:bg-gray-100">
-            Notifications
-          </a>
+        <nav class="space-y-1 rounded-lg border bg-white p-4">
+          <a routerLink="/" routerLinkActive="bg-blue-50 font-semibold text-blue-600" [routerLinkActiveOptions]="{ exact: true }" class="block rounded px-4 py-2 hover:bg-gray-100">Home</a>
+          <a routerLink="/explore" routerLinkActive="bg-blue-50 font-semibold text-blue-600" class="block rounded px-4 py-2 hover:bg-gray-100">Explore</a>
+          <a routerLink="/notifications" routerLinkActive="bg-blue-50 font-semibold text-blue-600" class="block rounded px-4 py-2 hover:bg-gray-100">Notifications</a>
         </nav>
       </aside>
 
-      <!-- Feed -->
-      <div class="md:col-span-2 space-y-4">
-        <!-- Compose -->
-        <app-compose (postCreated)="onPostCreated($event)" />
-
-        <!-- Posts -->
-        @for (post of posts(); track post.id) {
-          <app-post-card [post]="post" />
-        } @empty {
-          <div class="text-center text-gray-500 py-8">
-            No posts yet. Follow someone to see their posts!
-          </div>
+      <div class="space-y-4 md:col-span-2">
+        @if (auth.currentUser()) {
+          <app-compose (postCreated)="reload()" />
         }
 
-        <!-- Infinite Scroll Trigger -->
-        @if (hasMore()) {
-          <div #loadMore class="text-center py-4">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        @for (post of posts(); track post.entry_id) {
+          <app-post-card [post]="post" />
+        } @empty {
+          @if (!loading()) {
+            <div class="py-8 text-center text-gray-500">No posts yet.</div>
+          }
+        }
+
+        @if (error()) {
+          <div class="py-4 text-center text-red-500">Failed to load feed. Please try again.</div>
+        }
+
+        @if (nextCursor()) {
+          <div #loadMore class="py-4 text-center">
+            <div class="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
           </div>
         }
       </div>
     </main>
   `,
-  styles: [],
 })
-export class FeedComponent implements OnInit {
+export class FeedComponent {
   private postService = inject(PostService);
+  protected auth = inject(AuthService);
 
-  // Signals for reactive state
-  posts = signal<Post[]>([]);
-  hasMore = signal(true);
-  loading = signal(false);
+  readonly posts = signal<Post[]>([]);
+  readonly nextCursor = signal<string | null>(null);
+  readonly loading = signal(false);
+  readonly error = signal(false);
 
-  ngOnInit(): void {
-    this.loadPosts();
+  private readonly loadMore = viewChild<ElementRef<HTMLElement>>('loadMore');
+  private readonly observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) void this.loadNextPage();
+    },
+    { rootMargin: '200px' }
+  );
+
+  constructor() {
+    void this.reload();
+    // Observe the sentinel whenever it is (re)rendered
+    effect(() => {
+      const el = this.loadMore()?.nativeElement;
+      this.observer.disconnect();
+      if (el) this.observer.observe(el);
+    });
+    inject(DestroyRef).onDestroy(() => this.observer.disconnect());
   }
 
-  async loadPosts(): Promise<void> {
-    if (this.loading()) return;
+  async reload(): Promise<void> {
+    await this.fetchPage(null, true);
+  }
 
+  private async loadNextPage(): Promise<void> {
+    const cursor = this.nextCursor();
+    if (cursor) await this.fetchPage(cursor, false);
+  }
+
+  private async fetchPage(cursor: string | null, replace: boolean): Promise<void> {
+    if (this.loading()) return;
     this.loading.set(true);
+    this.error.set(false);
     try {
-      const data = await this.postService.getFeed();
-      this.posts.set(data.posts);
-      this.hasMore.set(data.has_more);
-    } catch (error) {
-      console.error('Failed to load feed:', error);
+      const data = await this.postService.getFeed(cursor);
+      this.posts.update((existing) => (replace ? data.posts : [...existing, ...data.posts]));
+      this.nextCursor.set(data.next_cursor);
+    } catch (err) {
+      this.error.set(true);
+      console.error('Failed to load feed:', err);
     } finally {
       this.loading.set(false);
     }
-  }
-
-  onPostCreated(post: Post): void {
-    // Prepend new post (Signal update)
-    this.posts.update((posts) => [post, ...posts]);
   }
 }

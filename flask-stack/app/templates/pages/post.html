@@ -33,13 +33,14 @@
                     <input type="hidden" name="parent_id" value="{{ post.id }}">
                     
                     <div class="compose-header">
-                        <img src="https://via.placeholder.com/48" alt="Your avatar" class="compose-avatar" width="48" height="48">
+                        <img src="{{ url_for('static', filename='img/avatar.svg') }}" alt="Your avatar" class="compose-avatar" width="48" height="48">
                     </div>
                     
                     <div class="compose-body">
                         <textarea 
                             name="content" 
                             placeholder="Post your reply..."
+                            oninput="this.nextElementSibling.querySelector('.char-count').textContent = this.value.length"
                             maxlength="280" 
                             required
                             rows="3"

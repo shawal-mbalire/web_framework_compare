@@ -1,99 +1,75 @@
 /**
- * Notification Service using Signals
- * Demonstrates real-time SSE integration
+ * Notifications as signals, with a live unread count over Server-Sent Events.
  */
-
-import { Injectable, signal, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable, effect, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import type { Notification, NotificationsResponse } from '@core/models/post.model';
+import { AuthService } from './auth.service';
 
-export interface Notification {
-  id: string;
-  type: 'LIKE' | 'RETWEET' | 'REPLY' | 'FOLLOW' | 'MENTION';
-  is_read: boolean;
-  created_at: Date;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class NotificationService {
   private http = inject(HttpClient);
-
-  // Signal for notifications list
-  notifications = signal<Notification[]>([]);
-
-  // SSE connection for real-time updates
+  private auth = inject(AuthService);
   private eventSource: EventSource | null = null;
 
+  readonly notifications = signal<Notification[]>([]);
+  readonly unreadCount = signal(0);
+
   constructor() {
-    // Auto-effect: Runs when currentUser changes (Angular 21!)
+    // Re-runs whenever the currentUser signal changes (login / logout)
     effect(() => {
-      const token = localStorage.getItem('token');
-      if (token) {
+      if (this.auth.currentUser()) {
         this.connectSSE();
       } else {
         this.disconnectSSE();
+        this.notifications.set([]);
+        this.unreadCount.set(0);
       }
     });
   }
 
   async loadNotifications(): Promise<void> {
     try {
-      const data = await this.http
-        .get<{ notifications: Notification[] }>('/api/notifications')
-        .toPromise();
-      this.notifications.set(data?.notifications || []);
+      const data = await firstValueFrom(
+        this.http.get<NotificationsResponse>('/api/notifications')
+      );
+      this.notifications.set(data.notifications);
+      this.unreadCount.set(data.unread_count);
     } catch (error) {
       console.error('Failed to load notifications:', error);
     }
   }
 
   markAsRead(notificationId: string): void {
-    // Optimistic update (Signal pattern)
-    this.notifications.update((notifications) =>
-      notifications.map((n) =>
-        n.id === notificationId ? { ...n, is_read: true } : n
-      )
-    );
+    const target = this.notifications().find((n) => n.id === notificationId);
+    if (!target || target.is_read) return;
 
-    // Send to server
-    this.http
-      .post(`/api/notifications/${notificationId}/read`, {})
-      .subscribe({
-        error: () => {
-          // Rollback on error
-          this.notifications.update((notifications) =>
-            notifications.map((n) =>
-              n.id === notificationId ? { ...n, is_read: false } : n
-            )
-          );
-        },
-      });
+    // Optimistic update, rolled back on error
+    const setRead = (isRead: boolean) => {
+      this.notifications.update((list) =>
+        list.map((n) => (n.id === notificationId ? { ...n, is_read: isRead } : n))
+      );
+      this.unreadCount.update((count) => Math.max(0, count + (isRead ? -1 : 1)));
+    };
+    setRead(true);
+    this.http.post(`/api/notifications/${notificationId}/read`, {}).subscribe({
+      error: () => setRead(false),
+    });
   }
 
   private connectSSE(): void {
     if (this.eventSource) return;
-
     this.eventSource = new EventSource('/api/notifications/stream');
-
-    this.eventSource.addEventListener('notification', (event) => {
-      const notification: Notification = JSON.parse(event.data);
-      // Prepend new notification (Signal update)
-      this.notifications.update((notifications) => [notification, ...notifications]);
+    this.eventSource.addEventListener('unread', (event) => {
+      const { unread_count } = JSON.parse((event as MessageEvent<string>).data);
+      this.unreadCount.set(unread_count);
     });
-
-    this.eventSource.addEventListener('error', () => {
-      console.error('SSE connection failed');
-      this.disconnectSSE();
-    });
+    // EventSource reconnects on its own after transient errors
   }
 
   private disconnectSSE(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
+    this.eventSource?.close();
+    this.eventSource = null;
   }
 }
-
-import { inject } from '@angular/core';

@@ -1,7 +1,7 @@
 # Social Architecture Audit - Makefile
 # Convenient commands for Docker Compose deployment
 
-.PHONY: help up down logs ps restart rebuild clean test db-init db-reset
+.PHONY: help up down logs ps restart rebuild clean test check db-init db-reset
 
 # Colors for output
 GREEN  := \033[0;32m
@@ -22,91 +22,97 @@ help: ## Show this help message
 
 up: ## Start all services
 	@echo "$(GREEN)Starting all services...$(NC)"
-	docker-compose up -d
+	docker compose up -d
 	@echo "$(GREEN)✓ Services started!$(NC)"
 	@make ps
 
 down: ## Stop all services
 	@echo "$(YELLOW)Stopping all services...$(NC)"
-	docker-compose down
+	docker compose down
 	@echo "$(GREEN)✓ Services stopped$(NC)"
 
 logs: ## View logs from all services
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-flask: ## View Flask logs
-	docker-compose logs -f flask
+	docker compose logs -f flask
 
 logs-astro: ## View Astro logs
-	docker-compose logs -f astro
+	docker compose logs -f astro
 
 logs-tanstack: ## View TanStack logs
-	docker-compose logs -f tanstack
+	docker compose logs -f tanstack
 
 logs-angular: ## View Angular logs
-	docker-compose logs -f angular
+	docker compose logs -f angular
 
 logs-db: ## View database logs
-	docker-compose logs -f postgres
+	docker compose logs -f postgres
 
 ps: ## Show service status
-	@docker-compose ps
+	@docker compose ps
 
 restart: ## Restart all services
 	@echo "$(YELLOW)Restarting all services...$(NC)"
-	docker-compose restart
+	docker compose restart
 	@echo "$(GREEN)✓ Services restarted$(NC)"
 
 restart-flask: ## Restart Flask only
-	docker-compose restart flask
+	docker compose restart flask
 
 restart-astro: ## Restart Astro only
-	docker-compose restart astro
+	docker compose restart astro
 
 restart-tanstack: ## Restart TanStack only
-	docker-compose restart tanstack
+	docker compose restart tanstack
 
 restart-angular: ## Restart Angular only
-	docker-compose restart angular
+	docker compose restart angular
 
 rebuild: ## Rebuild all images and restart
 	@echo "$(YELLOW)Rebuilding all images...$(NC)"
-	docker-compose up -d --build
+	docker compose up -d --build
 	@echo "$(GREEN)✓ Rebuild complete$(NC)"
 
 rebuild-flask: ## Rebuild Flask image only
-	docker-compose up -d --build flask
+	docker compose up -d --build flask
 
 rebuild-astro: ## Rebuild Astro image only
-	docker-compose up -d --build astro
+	docker compose up -d --build astro
 
 rebuild-tanstack: ## Rebuild TanStack image only
-	docker-compose up -d --build tanstack
+	docker compose up -d --build tanstack
 
 rebuild-angular: ## Rebuild Angular image only
-	docker-compose up -d --build angular
+	docker compose up -d --build angular
 
 clean: ## Stop services and remove volumes (CAUTION: deletes data!)
 	@echo "$(YELLOW)⚠️  This will delete all data. Are you sure? [y/N]$(NC)" && read ans && [ $${ans:-N} = y ]
-	docker-compose down -v
+	docker compose down -v
 	@echo "$(GREEN)✓ Cleaned up$(NC)"
 
 db-shell: ## Connect to PostgreSQL shell
-	docker-compose exec postgres psql -U social_user -d social_audit
+	docker compose exec postgres psql -U social_user -d social_audit
 
 db-init: ## Initialize database schema
 	@echo "$(GREEN)Initializing database...$(NC)"
-	docker-compose exec -T postgres psql -U social_user -d social_audit < schema.sql
+	docker compose exec -T postgres psql -U social_user -d social_audit < schema.sql
 	@echo "$(GREEN)✓ Database initialized$(NC)"
 
 db-reset: ## Reset database (CAUTION: deletes all data!)
 	@echo "$(YELLOW)⚠️  This will delete all data. Are you sure? [y/N]$(NC)" && read ans && [ $${ans:-N} = y ]
-	docker-compose exec postgres psql -U social_user -d postgres -c "DROP DATABASE IF EXISTS social_audit;"
-	docker-compose exec postgres psql -U social_user -d postgres -c "CREATE DATABASE social_audit;"
+	docker compose exec postgres psql -U social_user -d postgres -c "DROP DATABASE IF EXISTS social_audit;"
+	docker compose exec postgres psql -U social_user -d postgres -c "CREATE DATABASE social_audit;"
 	@make db-init
 	@echo "$(GREEN)✓ Database reset complete$(NC)"
 
-test: ## Run load tests on all stacks
+check: ## Lint, type-check, test and build every stack locally
+	cd flask-stack && uv run --no-sync ruff check app tests && uv run --no-sync ruff format --check app tests && uv run --no-sync mypy app && uv run --no-sync pytest
+	cd astro-stack && bun install --frozen-lockfile && bun run type-check && bun run build
+	cd tanstack-stack && bun install --frozen-lockfile && bun run type-check && bun run build
+	cd angular-stack && bun install --frozen-lockfile && bun run type-check && bun run build
+
+test: ## Run load tests on all stacks (requires ab)
 	@echo "$(GREEN)Running load tests...$(NC)"
 	@echo "$(YELLOW)Testing Flask...$(NC)"
 	@ab -n 100 -c 10 http://flask.localhost/ 2>&1 | grep "Requests per second"
@@ -143,12 +149,12 @@ open-all: ## Open all stacks in browser
 
 backup: ## Backup database to backup.sql
 	@echo "$(GREEN)Creating database backup...$(NC)"
-	docker-compose exec postgres pg_dump -U social_user social_audit > backup.sql
+	docker compose exec postgres pg_dump -U social_user social_audit > backup.sql
 	@echo "$(GREEN)✓ Backup saved to backup.sql$(NC)"
 
 restore: ## Restore database from backup.sql
 	@echo "$(YELLOW)Restoring database from backup.sql...$(NC)"
-	docker-compose exec -T postgres psql -U social_user social_audit < backup.sql
+	docker compose exec -T postgres psql -U social_user social_audit < backup.sql
 	@echo "$(GREEN)✓ Database restored$(NC)"
 
 install-hosts: ## Add .localhost domains to /etc/hosts

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Social Audit{% endblock %}
+
+{% set verbs = {
+    'LIKE': 'liked your post',
+    'RETWEET': 'reposted your post',
+    'QUOTE_TWEET': 'quoted your post',
+    'REPLY': 'replied to your post',
+    'FOLLOW': 'followed you',
+    'MENTION': 'mentioned you',
+} %}
+
+{% block content %}
+<div class="container">
+    <div class="feed-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('feed.home') }}" class="sidebar-link">Home</a>
+                <a href="{{ url_for('feed.explore') }}" class="sidebar-link">Explore</a>
+                <a href="{{ url_for('notifications.list_notifications') }}" class="sidebar-link active">Notifications</a>
+            </nav>
+        </aside>
+
+        <section class="feed-main">
+            <header class="feed-header">
+                <h2>Notifications</h2>
+                <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+                    <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
+                </form>
+            </header>
+
+            <ul class="notification-list">
+                {% for n in notifications %}
+                <li class="notification-item {{ '' if n.is_read else 'unread' }}">
+                    <div class="notification-body">
+                        <a href="{{ url_for('users.profile', username=n.actor.username) }}">@{{ n.actor.username }}</a>
+                        {{ verbs.get(n.type.value, 'interacted with you') }}
+                        {% if n.post_id %}· <a href="{{ url_for('posts.view_post', post_id=n.post_id) }}">view post</a>{% endif %}
+                        <div class="text-muted"><time datetime="{{ n.created_at.isoformat() }}">{{ n.created_at.strftime('%b %d, %H:%M') }}</time></div>
+                    </div>
+                    {% if not n.is_read %}
+                    <form method="POST" action="{{ url_for('notifications.mark_read', notification_id=n.id) }}">
+                        <button type="submit" class="btn btn-secondary btn-sm">Mark read</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% else %}
+                <li class="empty-state"><p>No notifications yet.</p></li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+</div>
+{% endblock %}

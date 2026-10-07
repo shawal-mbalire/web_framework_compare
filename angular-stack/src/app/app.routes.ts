@@ -1,24 +1,30 @@
 /**
- * App Routes (File-based routing pattern)
+ * App routes (lazy-loaded standalone components)
  */
+import { inject } from '@angular/core';
+import { Router, type Routes } from '@angular/router';
+import { AuthService } from '@core/services/auth.service';
 
-import { Routes } from '@angular/router';
+const requireAuth = () =>
+  inject(AuthService).currentUser() ? true : inject(Router).createUrlTree(['/login']);
 
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./features/feed/feed.component').then((m) => m.FeedComponent),
+    loadComponent: () => import('./features/feed/feed.component').then((m) => m.FeedComponent),
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'explore',
     loadComponent: () =>
-      import('./features/explore/explore.component').then(
-        (m) => m.ExploreComponent
-      ),
+      import('./features/explore/explore.component').then((m) => m.ExploreComponent),
   },
   {
     path: 'notifications',
+    canActivate: [requireAuth],
     loadComponent: () =>
       import('./features/notifications/notifications.component').then(
         (m) => m.NotificationsComponent
@@ -27,12 +33,7 @@ export const routes: Routes = [
   {
     path: 'profile/:username',
     loadComponent: () =>
-      import('./features/profile/profile.component').then(
-        (m) => m.ProfileComponent
-      ),
+      import('./features/profile/profile.component').then((m) => m.ProfileComponent),
   },
-  {
-    path: '**',
-    redirectTo: '',
-  },
+  { path: '**', redirectTo: '' },
 ];

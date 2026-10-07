@@ -1,17 +1,8 @@
 /**
- * Angular 21 Main Entry (Zoneless Mode)
- * Using Signals for reactivity instead of zone.js
+ * Angular entry point: zoneless change detection, driven entirely by signals.
  */
-
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
-import { routes } from './app/app.routes';
+import { appConfig } from './app/app.config';
 
-bootstrapApplication(AppComponent, {
-  providers: [
-    provideRouter(routes),
-    provideHttpClient(withFetch()),
-  ],
-}).catch((err) => console.error(err));
+bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));

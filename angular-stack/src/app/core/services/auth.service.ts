@@ -1,63 +1,43 @@
 /**
- * Auth Service using Signals
- * Angular 21 Zoneless Mode
+ * Auth state as a signal. The session itself is an httpOnly cookie set by the
+ * API server, so no token is ever exposed to JavaScript.
  */
-
-import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import type { User } from '@core/models/post.model';
 
-export interface User {
-  id: string;
-  username: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  is_verified: boolean;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
 
-  // Signal for current user (replaces BehaviorSubject!)
-  currentUser = signal<User | null>(null);
+  readonly currentUser = signal<User | null>(null);
 
-  login(username: string, password: string): Observable<{ user: User; token: string }> {
-    return this.http
-      .post<{ user: User; token: string }>('/api/auth/login', {
-        username,
-        password,
-      })
-      .pipe(
-        tap((response) => {
-          // Update signal (triggers all dependents automatically)
-          this.currentUser.set(response.user);
-          localStorage.setItem('token', response.token);
-        })
-      );
+  async login(username: string, password: string): Promise<void> {
+    const user = await firstValueFrom(
+      this.http.post<User>('/api/auth/login', { username, password })
+    );
+    this.currentUser.set(user);
   }
 
-  logout(): void {
+  async register(username: string, email: string, password: string): Promise<void> {
+    const user = await firstValueFrom(
+      this.http.post<User>('/api/auth/register', { username, email, password })
+    );
+    this.currentUser.set(user);
+  }
+
+  async logout(): Promise<void> {
+    await firstValueFrom(this.http.post('/api/auth/logout', {}));
     this.currentUser.set(null);
-    localStorage.removeItem('token');
   }
 
-  // Auto-fetch current user on init
   async loadCurrentUser(): Promise<void> {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     try {
-      const user = await this.http.get<User>('/api/auth/me').toPromise();
-      this.currentUser.set(user || null);
-    } catch (error) {
-      console.error('Failed to load user:', error);
-      this.logout();
+      const user = await firstValueFrom(this.http.get<User | null>('/api/auth/me'));
+      this.currentUser.set(user);
+    } catch {
+      this.currentUser.set(null);
     }
   }
 }
-
-// Helper to inject HttpClient (Angular 21 pattern)
-import { inject } from '@angular/core';

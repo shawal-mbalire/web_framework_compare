@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   # ========================================
   # Traefik - Reverse Proxy & Load Balancer
   # ========================================
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.6
     container_name: social-audit-traefik
     command:
       # Enable Docker provider
@@ -44,12 +42,11 @@ services:
       POSTGRES_DB: social_audit
       POSTGRES_USER: social_user
       POSTGRES_PASSWORD: social_pass_2026
-      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     networks:
       - social-audit-network
     healthcheck:
@@ -59,23 +56,7 @@ services:
       retries: 5
 
   # ========================================
-  # Redis (for Flask background jobs)
-  # ========================================
-  redis:
-    image: redis:7-alpine
-    container_name: social-audit-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - social-audit-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
-  # ========================================
-  # Flask Stack (Python + uv + Ruff)
+  # Flask Stack (Flask 3 + SQLAlchemy 2, gunicorn)
   # ========================================
   flask:
     build:
@@ -84,13 +65,9 @@ services:
     container_name: social-audit-flask
     environment:
       DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
-      REDIS_URL: redis://redis:6379/0
       SECRET_KEY: dev-secret-key-change-in-production
-      FLASK_ENV: production
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - social-audit-network
@@ -103,28 +80,20 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.flask.rule=Host(`flask.localhost`)"
       - "traefik.http.routers.flask.entrypoints=web"
       - "traefik.http.services.flask.loadbalancer.server.port=5000"
-      # Sticky sessions for Flask
-      - "traefik.http.services.flask.loadbalancer.sticky.cookie=true"
       # Security headers
       - "traefik.http.middlewares.flask-headers.headers.customresponseheaders.X-Robots-Tag=noindex,nofollow"
-      - "traefik.http.middlewares.flask-headers.headers.contentSecurityPolicy=default-src 'self'"
+      - "traefik.http.middlewares.flask-headers.headers.contentSecurityPolicy=default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:"
       - "traefik.http.middlewares.flask-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.flask-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.routers.flask.middlewares=flask-headers"
 
   # ========================================
-  # Astro Stack (Astro 6 + Svelte 5 + Bun)
+  # Astro Stack (Astro 7 + Svelte 5)
   # ========================================
   astro:
     build:
@@ -133,8 +102,8 @@ services:
     container_name: social-audit-astro
     environment:
       DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
-      PUBLIC_API_URL: http://astro.localhost
-      NODE_ENV: production
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      COOKIE_SECURE: "false" # served over plain HTTP locally
     depends_on:
       postgres:
         condition: service_healthy
@@ -149,12 +118,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4321/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.astro.rule=Host(`astro.localhost`)"
@@ -176,8 +139,8 @@ services:
     container_name: social-audit-tanstack
     environment:
       DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
-      VITE_API_URL: http://tanstack.localhost
-      NODE_ENV: production
+      SESSION_SECRET: dev-session-secret-change-in-production-32+chars
+      COOKIE_SECURE: "false" # served over plain HTTP locally
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,12 +155,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tanstack.rule=Host(`tanstack.localhost`)"
@@ -210,7 +167,7 @@ services:
       - "traefik.http.routers.tanstack.middlewares=tanstack-headers"
 
   # ========================================
-  # Angular Stack (Angular 21 + Signals + Zoneless)
+  # Angular Stack (Angular 22 SPA + Bun/Express API)
   # ========================================
   angular:
     build:
@@ -218,7 +175,9 @@ services:
       dockerfile: Dockerfile
     container_name: social-audit-angular
     environment:
-      API_URL: http://angular.localhost
+      DATABASE_URL: postgresql://social_user:social_pass_2026@postgres:5432/social_audit
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      COOKIE_SECURE: "false" # served over plain HTTP locally
     depends_on:
       postgres:
         condition: service_healthy
@@ -233,12 +192,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4200/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.angular.rule=Host(`angular.localhost`)"

@@ -3,34 +3,31 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lockb* ./
-
-# Install dependencies
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-# Copy source code
 COPY . .
-
-# Build for production
 RUN bun run build
 
-# Production stage
-FROM oven/bun:1-slim
+FROM oven/bun:1 AS deps
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
+
+# Runtime: srvx serves the SSR fetch handler plus the client assets
+FROM node:22-slim
 
 WORKDIR /app
+ENV NODE_ENV=production PORT=3000
 
-# Copy built assets and dependencies
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
 
-# Expose port
+USER node
 EXPOSE 3000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD bun -e "fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1))" || exit 1
+  CMD node -e "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-# Run TanStack Start server
-CMD ["bun", "run", "start"]
+CMD ["node_modules/.bin/srvx", "serve", "--prod", "--entry", "./dist/server/server.js", "--static", "../client"]

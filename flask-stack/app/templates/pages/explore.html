@@ -32,17 +32,18 @@
         <!-- Explore Feed -->
         <section class="feed-main">
             <header class="feed-header">
-                <h2>Explore</h2>
+                <h2>{% if q %}Results for “{{ q }}”{% else %}Explore{% endif %}</h2>
             </header>
 
             <!-- Search -->
             <div class="search-section">
-                <form method="GET" action="/search" class="search-form">
+                <form method="GET" action="{{ url_for('feed.search') }}" class="search-form">
                     <input 
                         type="search" 
                         name="q" 
                         placeholder="Search posts, users, hashtags..."
                         aria-label="Search"
+                        value="{{ q }}"
                     >
                     <button type="submit" class="btn btn-primary">Search</button>
                 </form>
@@ -56,10 +57,22 @@
                     {% endfor %}
                 {% else %}
                     <div class="empty-state">
-                        <p>Explore posts from the entire community!</p>
+                        <p>{% if q %}No posts match your search.{% else %}Explore posts from the entire community!{% endif %}</p>
                     </div>
                 {% endif %}
             </div>
+
+            {% if has_more or page > 1 %}
+            <nav class="pagination" aria-label="Pagination">
+                {% if page > 1 %}
+                <a href="{{ url_for(page_endpoint, page=page-1, q=q or None) }}" class="btn btn-secondary">Previous</a>
+                {% endif %}
+                <span class="page-info">Page {{ page }}</span>
+                {% if has_more %}
+                <a href="{{ url_for(page_endpoint, page=page+1, q=q or None) }}" class="btn btn-secondary">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </section>
     </div>
 </div>

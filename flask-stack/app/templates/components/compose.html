@@ -6,7 +6,7 @@
         {% endif %}
         
         <div class="compose-header">
-            <img src="https://via.placeholder.com/48" alt="Your avatar" class="compose-avatar" width="48" height="48">
+            <img src="{{ url_for('static', filename='img/avatar.svg') }}" alt="Your avatar" class="compose-avatar" width="48" height="48">
         </div>
         
         <div class="compose-body">
@@ -17,7 +17,7 @@
                 maxlength="280" 
                 required
                 rows="3"
-                oninput="this.nextElementSibling.querySelector('.char-count').textContent = this.value.length"
+                oninput="this.nextElementSibling.querySelector('.char-count').textContent = this.value.length; document.getElementById('char-meter').value = this.value.length"
             ></textarea>
             
             <div class="compose-footer">
@@ -41,8 +41,4 @@
             --value: attr(value);
         }
     </style>
-    
-    <script>
-        document.getElementById('compose-content').oninput = function() { document.getElementById('char-meter').value = this.value.length; };
-    </script>
 </section>
