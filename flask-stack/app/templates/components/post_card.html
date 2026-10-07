@@ -1,5 +1,8 @@
 <!-- Post Card Component -->
 <article class="post-card" id="post-{{ post.id }}">
+    {% if post.reposted_by %}
+    <p class="post-repost">↻ <a href="{{ url_for('users.profile', username=post.reposted_by) }}">@{{ post.reposted_by }}</a> reposted</p>
+    {% endif %}
     <div class="post-avatar">
         <img src="{{ post.author.avatar }}" alt="{{ post.author.display_name }}" width="48" height="48">
     </div>
@@ -7,9 +10,9 @@
     <div class="post-content">
         <header class="post-header">
             <div class="post-author">
-                <a href="/users/{{ post.author.username }}" class="author-name">{{ post.author.display_name }}</a>
+                <a href="{{ url_for('users.profile', username=post.author.username) }}" class="author-name">{{ post.author.display_name }}</a>
                 <span class="author-username">@{{ post.author.username }}</span>
-                <time class="post-time" datetime="{{ post.created_at }}">· {{ post.created_at }}</time>
+                <a href="{{ url_for('posts.view_post', post_id=post.id) }}" class="post-time"><time datetime="{{ post.created_at_iso }}">· {{ post.created_at }}</time></a>
             </div>
             
             {% if post.author.username == session.get('username') %}
@@ -58,7 +61,7 @@
             </form>
             
             <!-- Share (uses Web Share API - single JS statement) -->
-            <button type="button" class="action-btn" aria-label="Share" onclick="navigator.share({url: window.location.origin + '/posts/{{ post.id }}'}).catch(() => {})">
+            <button type="button" class="action-btn" aria-label="Share" onclick="const url = window.location.origin + '/posts/{{ post.id }}'; navigator.share ? navigator.share({url}).catch(() => {}) : navigator.clipboard.writeText(url)">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                 </svg>

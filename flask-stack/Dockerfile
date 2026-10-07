@@ -1,26 +1,27 @@
 # Flask Stack Dockerfile
 FROM python:3.12-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-# Install uv for fast dependency installation
-RUN pip install --no-cache-dir uv
+# uv for fast dependency installation
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy dependency files
+# Install the package (dependencies + app code)
 COPY pyproject.toml ./
-
-# Install dependencies with uv (10-100x faster!)
-RUN uv pip install --system -e .
-
-# Copy application code
 COPY app/ ./app/
+RUN uv pip install --system --no-cache .
 
-# Expose port
+# Run as an unprivileged user
+RUN useradd --create-home appuser
+USER appuser
+
 EXPOSE 5000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
 
-# Run with gunicorn (production-ready WSGI server)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "gevent", "app:create_app()"]
+# gthread workers so the SSE notification stream doesn't block a whole worker
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--worker-class", "gthread", "--threads", "8", "app:create_app()"]

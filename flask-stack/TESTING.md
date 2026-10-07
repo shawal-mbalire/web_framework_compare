@@ -2,17 +2,17 @@
 
 ## Quick Start
 
-1. **Install Dependencies**:
+1. **Install Dependencies** (and load `../schema.sql` into PostgreSQL):
 ```bash
 cd flask-stack
-pip install flask
+uv venv && source .venv/bin/activate
+uv pip install -e ".[dev]"
 ```
 
-2. **Run the Application**:
+2. **Run the Application / the test suite**:
 ```bash
-export FLASK_APP=app
-export FLASK_DEBUG=1
-python -m flask run
+flask --app app run --debug
+pytest
 ```
 
 3. **Test the Reactive Features**:

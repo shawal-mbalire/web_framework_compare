@@ -1533,3 +1533,40 @@ dialog::backdrop {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+/* ===== Repost banner, profile & notifications ===== */
+.post-repost {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+a.post-time:hover { text-decoration: underline; }
+
+.profile-card {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+  padding: var(--spacing-lg);
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.profile-card img { border-radius: var(--radius-full); }
+.profile-info { flex: 1; }
+.profile-stats { display: flex; gap: var(--spacing-lg); margin-top: var(--spacing-sm); }
+
+.notification-list { list-style: none; display: grid; gap: var(--spacing-sm); }
+
+.notification-item {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.notification-item.unread { border-color: var(--color-primary); }
+.notification-item .notification-body { flex: 1; }

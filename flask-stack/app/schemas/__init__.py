@@ -4,20 +4,20 @@ Type-safe data validation and serialization
 """
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 # ============================================================================
 # User Schemas
 # ============================================================================
 
+
 class UserBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
+    username: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_]+$")
     email: EmailStr
-    display_name: Optional[str] = Field(None, max_length=100)
-    bio: Optional[str] = Field(None, max_length=500)
+    display_name: str | None = Field(None, max_length=100)
+    bio: str | None = Field(None, max_length=500)
 
 
 class UserCreate(UserBase):
@@ -25,28 +25,29 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    display_name: Optional[str] = Field(None, max_length=100)
-    bio: Optional[str] = Field(None, max_length=500)
-    avatar_url: Optional[str] = None
-    banner_url: Optional[str] = None
+    display_name: str | None = Field(None, max_length=100)
+    bio: str | None = Field(None, max_length=500)
+    avatar_url: str | None = None
+    banner_url: str | None = None
 
 
 class UserPublic(UserBase):
     id: UUID
-    avatar_url: Optional[str] = None
-    banner_url: Optional[str] = None
+    avatar_url: str | None = None
+    banner_url: str | None = None
     is_verified: bool
     is_private: bool
     followers_count: int
     following_count: int
     posts_count: int
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserPrivate(UserPublic):
     """Extended user data for authenticated user"""
+
     email: EmailStr
     last_active_at: datetime
 
@@ -54,6 +55,7 @@ class UserPrivate(UserPublic):
 # ============================================================================
 # Auth Schemas
 # ============================================================================
+
 
 class LoginRequest(BaseModel):
     username: str
@@ -71,14 +73,15 @@ class TokenResponse(BaseModel):
 # Post Schemas
 # ============================================================================
 
+
 class PostBase(BaseModel):
-    content: Optional[str] = Field(None, max_length=280)
-    media_urls: Optional[List[str]] = None
+    content: str | None = Field(None, max_length=280)
+    media_urls: list[str] | None = None
 
 
 class PostCreate(PostBase):
-    parent_id: Optional[UUID] = None  # For replies
-    original_post_id: Optional[UUID] = None  # For retweets/quote tweets
+    parent_id: UUID | None = None  # For replies
+    original_post_id: UUID | None = None  # For retweets/quote tweets
 
 
 class PostUpdate(BaseModel):
@@ -89,8 +92,8 @@ class PostPublic(PostBase):
     id: UUID
     user_id: UUID
     user: UserPublic
-    parent_id: Optional[UUID] = None
-    original_post_id: Optional[UUID] = None
+    parent_id: UUID | None = None
+    original_post_id: UUID | None = None
     thread_depth: int
     likes_count: int
     retweets_count: int
@@ -100,17 +103,18 @@ class PostPublic(PostBase):
     is_liked: bool = False  # Computed field: did current user like this?
     is_retweeted: bool = False  # Computed field
     is_bookmarked: bool = False  # Computed field
-    
+
     # For quote tweets, include the original post
-    original_post: Optional["PostPublic"] = None
-    
+    original_post: "PostPublic | None" = None
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class ThreadResponse(BaseModel):
     """Response for threaded conversations"""
+
     root_post: PostPublic
-    replies: List[PostPublic]
+    replies: list[PostPublic]
     total_replies: int
 
 
@@ -118,20 +122,22 @@ class ThreadResponse(BaseModel):
 # Feed Schemas
 # ============================================================================
 
+
 class FeedResponse(BaseModel):
-    posts: List[PostPublic]
-    next_cursor: Optional[str] = None
+    posts: list[PostPublic]
+    next_cursor: str | None = None
     has_more: bool
 
 
 class CursorPagination(BaseModel):
-    cursor: Optional[str] = None
+    cursor: str | None = None
     limit: int = Field(default=20, ge=1, le=100)
 
 
 # ============================================================================
 # Social Schemas
 # ============================================================================
+
 
 class FollowPublic(BaseModel):
     id: UUID
@@ -140,12 +146,12 @@ class FollowPublic(BaseModel):
     created_at: datetime
     follower: UserPublic
     followed: UserPublic
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class FollowersResponse(BaseModel):
-    users: List[UserPublic]
+    users: list[UserPublic]
     total: int
 
 
@@ -153,19 +159,20 @@ class FollowersResponse(BaseModel):
 # Notification Schemas
 # ============================================================================
 
+
 class NotificationPublic(BaseModel):
     id: UUID
     type: str  # LIKE, RETWEET, REPLY, FOLLOW, MENTION
     actor: UserPublic
-    post: Optional[PostPublic] = None
+    post: PostPublic | None = None
     is_read: bool
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class NotificationsResponse(BaseModel):
-    notifications: List[NotificationPublic]
+    notifications: list[NotificationPublic]
     unread_count: int
     has_more: bool
 
@@ -173,6 +180,7 @@ class NotificationsResponse(BaseModel):
 # ============================================================================
 # Engagement Schemas
 # ============================================================================
+
 
 class LikeResponse(BaseModel):
     liked: bool
@@ -188,15 +196,17 @@ class RetweetResponse(BaseModel):
 # Error Schemas
 # ============================================================================
 
+
 class ErrorResponse(BaseModel):
     error: str
-    detail: Optional[str] = None
-    code: Optional[str] = None
+    detail: str | None = None
+    code: str | None = None
 
 
 # ============================================================================
 # Analytics/Stats Schemas
 # ============================================================================
+
 
 class UserStats(BaseModel):
     total_posts: int
@@ -209,9 +219,11 @@ class UserStats(BaseModel):
 
 
 class TrendingPost(PostPublic):
-    engagement_score: float  # Custom metric: (likes + retweets * 2 + replies * 3) / hours_since_posted
+    engagement_score: (
+        float  # Custom metric: (likes + retweets * 2 + replies * 3) / hours_since_posted
+    )
 
 
 class TrendingResponse(BaseModel):
-    posts: List[TrendingPost]
+    posts: list[TrendingPost]
     timeframe: str  # "24h", "7d", "30d"

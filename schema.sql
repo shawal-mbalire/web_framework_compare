@@ -426,20 +426,45 @@ $$ LANGUAGE plpgsql;
 -- SAMPLE DATA (For development/testing)
 -- ============================================================================
 
--- Insert sample users
+-- Demo accounts (fictional). Every account's password is: password123
 INSERT INTO users (username, email, password_hash, display_name, bio, is_verified) VALUES
-('elonmusk', 'elon@x.com', '$2b$12$KIXxLV7MvH.hashed', 'Elon Musk', 'Twitter 2.0', TRUE),
-('naval', 'naval@angellist.com', '$2b$12$KIXxLV7MvH.hashed', 'Naval', 'Happiness is a choice', TRUE),
-('pmarca', 'marc@a16z.com', '$2b$12$KIXxLV7MvH.hashed', 'Marc Andreessen', 'Software is eating the world', TRUE),
-('paulg', 'pg@ycombinator.com', '$2b$12$KIXxLV7MvH.hashed', 'Paul Graham', 'Founder Y Combinator', TRUE),
-('sama', 'sam@openai.com', '$2b$12$KIXxLV7MvH.hashed', 'Sam Altman', 'OpenAI CEO', TRUE);
+('alice', 'alice@example.com', '$2b$12$2gtfPR8ahBJ.QsPlG/2pr.GuagMVZ9hk5g6jJifC/GN.7Go1UzDc.', 'Alice Chen', 'Frontend engineer. Signals enthusiast.', TRUE),
+('bob', 'bob@example.com', '$2b$12$2gtfPR8ahBJ.QsPlG/2pr.GuagMVZ9hk5g6jJifC/GN.7Go1UzDc.', 'Bob Okafor', 'Python, Postgres and boring technology.', TRUE),
+('carol', 'carol@example.com', '$2b$12$2gtfPR8ahBJ.QsPlG/2pr.GuagMVZ9hk5g6jJifC/GN.7Go1UzDc.', 'Carol Diaz', 'Islands architecture fan.', FALSE),
+('dave', 'dave@example.com', '$2b$12$2gtfPR8ahBJ.QsPlG/2pr.GuagMVZ9hk5g6jJifC/GN.7Go1UzDc.', 'Dave Kim', 'React since the createClass days.', FALSE),
+('erin', 'erin@example.com', '$2b$12$2gtfPR8ahBJ.QsPlG/2pr.GuagMVZ9hk5g6jJifC/GN.7Go1UzDc.', 'Erin Walsh', 'Enterprise Angular at scale.', FALSE);
 
--- Create some follows
+-- Social graph: alice follows bob, carol and dave; bob follows alice
 INSERT INTO follows (follower_id, followed_id)
 SELECT u1.id, u2.id
 FROM users u1
 CROSS JOIN users u2
-WHERE u1.username = 'naval' AND u2.username IN ('elonmusk', 'pmarca', 'paulg');
+WHERE (u1.username = 'alice' AND u2.username IN ('bob', 'carol', 'dave'))
+   OR (u1.username = 'bob' AND u2.username = 'alice');
+
+-- Sample posts, spread over the last few hours
+INSERT INTO posts (user_id, content, created_at)
+SELECT u.id, v.content, CURRENT_TIMESTAMP - v.age
+FROM (VALUES
+    ('bob', 'Server-rendered HTML is still the fastest way to ship a page. #flask #python', INTERVAL '5 hours'),
+    ('carol', 'Astro islands: ship zero JS by default, hydrate only what needs it. #webdev', INTERVAL '4 hours'),
+    ('dave', 'Server functions in TanStack Start give end-to-end types without writing an API layer.', INTERVAL '3 hours'),
+    ('erin', 'Zoneless change detection plus signals makes Angular feel brand new.', INTERVAL '2 hours'),
+    ('alice', 'Comparing four stacks against one Postgres schema. Same features, different trade-offs. #webdev', INTERVAL '1 hour')
+) AS v(username, content, age)
+JOIN users u ON u.username = v.username;
+
+-- A reply and a few likes so counts and threads have data
+INSERT INTO posts (user_id, content, parent_id, root_post_id, thread_depth, created_at)
+SELECT u.id, 'And it still works without JavaScript enabled.', p.id, p.id, 1, CURRENT_TIMESTAMP - INTERVAL '30 minutes'
+FROM users u, posts p JOIN users pu ON pu.id = p.user_id
+WHERE u.username = 'alice' AND pu.username = 'bob' AND p.parent_id IS NULL;
+
+INSERT INTO likes (user_id, post_id)
+SELECT u.id, p.id
+FROM users u
+JOIN posts p ON p.parent_id IS NULL AND p.user_id <> u.id
+WHERE u.username IN ('alice', 'bob');
 
 -- ============================================================================
 -- PERFORMANCE NOTES
