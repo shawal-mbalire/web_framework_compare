@@ -36,8 +36,8 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 2. **Fork and clone the repository**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/flask_full_stack.git
-   cd flask_full_stack
+   git clone https://github.com/YOUR_USERNAME/web_framework_compare.git
+   cd web_framework_compare
    ```
 
 3. **Set up the database**:
@@ -219,15 +219,19 @@ async function getUserById(userId: number): Promise<User | null> {
    # Flask
    pytest --cov=app
    
-   # TypeScript
-   bun run test
+   # TypeScript (no unit tests yet: type-check + production build)
+   bun run type-check && bun run build
+
+   # Everything at once, from the repo root
+   make check
    ```
 
 3. **Run linters**:
    ```bash
    # Flask
-   ruff check app/
-   mypy app/ --strict
+   ruff check app tests
+   ruff format --check app tests
+   mypy app
    
    # TypeScript
    bun run lint
@@ -236,8 +240,8 @@ async function getUserById(userId: number): Promise<User | null> {
 
 4. **Test Docker build** (if applicable):
    ```bash
-   docker-compose build
-   docker-compose up -d
+   docker compose build
+   docker compose up -d
    ```
 
 ### PR Template
