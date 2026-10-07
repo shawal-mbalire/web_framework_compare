@@ -1,441 +1,130 @@
 # Full-Stack Framework Comparison
 
-> **Enterprise-grade comparison tool for evaluating modern web frameworks through real-world implementation**
+The same Twitter/X-style app built four ways against **one shared PostgreSQL schema**, so the
+differences you see come from the framework and not from the data model.
 
-A production-ready social media platform (Twitter/X clone) implemented across **four** modern technology stacks, providing objective metrics for **Developer Experience**, **Performance**, **Type Safety**, and **Scalability**.
-
----
-
-## Table of Contents
-
-- [Quick Start](#quick-start)
-- [Technology Stack](#technology-stack)
-- [Architecture](#architecture)
-- [Framework Implementations](#framework-implementations)
-- [Performance Benchmarks](#performance-benchmarks)
-- [Feature Matrix](#feature-matrix)
-- [Getting Started](#getting-started)
-- [Database Schema](#database-schema)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+| Stack | Rendering model | Server code | Client state |
+|---|---|---|---|
+| [**Flask**](flask-stack/) | Server-rendered HTML, forms + redirects, no JS framework | Flask blueprints, SQLAlchemy 2.1 ORM | none (the server is the state) |
+| [**Astro**](astro-stack/) | SSR pages + a Svelte 5 island | Astro Actions + API route, postgres.js | TanStack Query (svelte) |
+| [**TanStack Start**](tanstack-stack/) | Streaming SSR React 19 with hydration | `createServerFn` RPC, postgres.js | TanStack Query (react), SSR-dehydrated |
+| [**Angular**](angular-stack/) | Client-rendered SPA (zoneless, signals) | Separate Bun + Express JSON API, postgres.js | Signals / `linkedSignal` |
 
 ---
 
-## Quick Start
-
-Deploy all four stacks with Docker Compose:
+## Quick start
 
 ```bash
-# Start all services
-docker-compose up -d
-
-# Access the applications
-# Flask:    http://flask.localhost
-# Astro:    http://astro.localhost
-# TanStack: http://tanstack.localhost
-# Angular:  http://angular.localhost
-
-# View logs
-make logs
-
-# Stop all services
-make down
+docker compose up -d --build     # or: make up
 ```
 
----
+| App | URL |
+|---|---|
+| Flask | http://flask.localhost |
+| Astro | http://astro.localhost |
+| TanStack | http://tanstack.localhost |
+| Angular | http://angular.localhost |
+| Traefik dashboard | http://localhost:8080 |
 
-## Technology Stack
+Postgres is initialised from [`schema.sql`](schema.sql) on first start. Log in with any seed
+account — `alice`, `bob`, `carol`, `dave`, `erin` — password **`password123`**. Because every
+stack reads and writes the same database, a like in one app shows up in the others.
 
-| Stack | Runtime | Framework | Language | Build Tool | Package Manager |
-|-------|---------|-----------|----------|------------|----------------|
-| **Flask** | Python 3.12+ | Flask 3.1+ | Python | uv | uv |
-| **Astro** | Bun | Astro 6 | TypeScript | Vite | Bun |
-| **TanStack** | Bun | TanStack Start | TypeScript/React 19 | Vite | Bun |
-| **Angular** | Bun | Angular 21 | TypeScript | Angular CLI | Bun |
-
----
-
-## Architecture
-
-All implementations share:
-
-- **Database**: PostgreSQL 15+ with shared schema ([schema.sql](schema.sql))
-- **Authentication**: JWT-based session management
-- **Real-time**: Server-Sent Events (SSE) for notifications
-- **Features**: Posts, likes, retweets, quote tweets, threaded conversations, infinite scroll
-
-### Key Database Features
-
-- Recursive CTEs for thread hierarchies
-- Database triggers for denormalized counts
-- GIN indexes for full-text search
-- Partial indexes for query optimization
+`make help` lists the other commands (logs, rebuild, `db-shell`, `db-reset`, `check`, …).
 
 ---
 
-## Framework Implementations
+## Versions
 
-### Flask Stack - Server-Rendered Python
+| | Flask | Astro | TanStack | Angular |
+|---|---|---|---|---|
+| Framework | Flask 3.1 | Astro 7 + Svelte 5 | TanStack Start 1.168 + React 19 | Angular 22 |
+| Language | Python 3.12 | TypeScript 6 | TypeScript 6 | TypeScript 6 |
+| Data access | SQLAlchemy 2.1 + psycopg 3 | postgres.js | postgres.js | postgres.js |
+| Validation | Pydantic v2 | Zod 4 | Zod 4 (+ TanStack Form) | Zod 4 (server), reactive forms |
+| Styling | Hand-written CSS | Tailwind 4 | Tailwind 4 | Tailwind 4 |
+| Auth | Signed cookie session | JWT cookie (`jose`) | Sealed cookie (`useSession`) | JWT cookie (`jose`) |
+| Tooling | uv, Ruff, mypy (strict), pytest | Bun, `astro check`, `svelte-check` | Bun, Vite 8, `tsc` | Bun, Angular CLI, `tsc` |
+| Production server | gunicorn (gthread) | `@astrojs/node` standalone | srvx | Bun + Express |
 
-**Stack**: Flask 3.1+ | SQLAlchemy 2.0 | Pydantic v2 | HTMx 2.0 | Alpine.js
-
-**Approach**: Hypermedia-driven architecture with minimal client-side JavaScript
-
-**Strengths**:
-- Smallest bundle size (~15 KB)
-- Excellent Python type safety
-- Battle-tested production patterns
-- Ultra-fast installs with `uv` (10-100x faster than pip)
-
-**Trade-offs**:
-- No end-to-end type safety
-- Server round-trips for interactions
-
-**Best For**: Python teams, backend-heavy applications, minimal client complexity
+All passwords are bcrypt hashes, so an account created in one stack can log in to the others.
 
 ---
 
-### Astro Stack - Islands Architecture
+## Feature status
 
-**Stack**: Astro 6 | Svelte 5 Runes | TanStack Query | Zod | Bun
-
-**Approach**: Server-first with selective client-side hydration
-
-**Strengths**:
-- Fastest initial load (SSR + partial hydration)
-- Small bundle (~80 KB)
-- End-to-end type safety via Astro Actions
-- Excellent SEO
-
-**Trade-offs**:
-- Manual database type definitions
-- Learning curve for islands architecture
-
-**Best For**: Content-heavy applications, modern TypeScript teams, optimal performance
-
----
-
-### TanStack Start - Full-Stack React
-
-**Stack**: TanStack Start | React 19 | TanStack Router/Query/Form | Bun
-
-**Approach**: Type-safe RPC with server functions
-
-**Strengths**:
-- Best-in-class type safety (server → client)
-- Built-in optimistic UI
-- Full-document streaming
-- React 19 compiler optimizations
-
-**Trade-offs**:
-- Larger bundle (~280 KB)
-- React ecosystem dependencies
-
-**Best For**: Highly interactive SPAs, React teams, complex client state
-
----
-
-### Angular Stack - Signal-Based Framework
-
-**Stack**: Angular 21 | Signals | Zoneless Mode | Standalone Components | Bun
-
-**Approach**: Fine-grained reactivity without Zone.js
-
-**Strengths**:
-- Fine-grained reactivity (O(n) vs O(n²))
-- End-to-end TypeScript type safety
-- Built-in dependency injection
-- Opinionated architecture for large teams
-
-**Trade-offs**:
-- Medium bundle (~150 KB with Zoneless)
-- Steeper learning curve
-
-**Best For**: Enterprise applications, large teams, existing Angular codebases
-
----
-
-## Performance Benchmarks
-
-| Metric | Flask | Astro | TanStack | Angular |
-|--------|-------|-------|----------|---------|
-| **Bundle Size** | ~15 KB | ~80 KB | ~280 KB | ~150 KB |
-| **Time to Interactive** | ~80ms | ~60ms | ~120ms | ~90ms |
-| **Type Safety** | Backend only | End-to-end | End-to-end | End-to-end |
-| **Reactivity Model** | HTMx/Alpine | Svelte Runes | React Hooks | Signals |
-| **Initial Load Speed** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Developer Experience** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-
-**Recommendation**: 
-- **Astro** - Best overall balance for most projects
-- **Angular** - Best for enterprise and large teams
-- **TanStack** - Best for React-centric teams
-- **Flask** - Best for Python-first teams
-
----
-
-## Feature Matrix
+What is actually implemented today (✅ done · ➖ not yet):
 
 | Feature | Flask | Astro | TanStack | Angular |
-|---------|:-----:|:-----:|:--------:|:-------:|
-| User Authentication | ✅ | ✅ | ✅ | ✅ |
-| Posts/Tweets | ✅ | ✅ | ✅ | ✅ |
-| Like/Unlike | ✅ | ✅ | ✅ | ✅ |
-| Retweets | ✅ | ✅ | ✅ | ✅ |
-| Quote Tweets | ✅ | ✅ | ✅ | ✅ |
-| Threaded Replies | ✅ | ✅ | ✅ | ✅ |
-| Follow/Unfollow | ✅ | ✅ | ✅ | ✅ |
-| Real-time Notifications | ✅ | ✅ | ✅ | ✅ |
-| Infinite Scroll | ✅ | ✅ | ✅ | ✅ |
-| Optimistic UI | ⚠️ | ✅ | ✅ | ✅ |
-| Full-text Search | ✅ | ✅ | ✅ | ✅ |
-| User Profiles | ✅ | ✅ | ✅ | ✅ |
+|---|:-:|:-:|:-:|:-:|
+| Register / login / logout | ✅ | ✅ | ✅ | ✅ |
+| Global feed with pagination | ✅ pages | ✅ infinite scroll | ✅ infinite scroll | ✅ infinite scroll |
+| Home timeline (followed users) | ✅ | ➖ | ➖ | ➖ |
+| Create post | ✅ | ✅ | ✅ | ✅ |
+| Like / unlike | ✅ | ✅ optimistic | ✅ optimistic | ✅ optimistic |
+| Retweet / undo | ✅ | ✅ optimistic | ✅ optimistic | ✅ optimistic |
+| Replies & thread view | ✅ | ➖ (action only) | ➖ | ➖ |
+| Delete own post | ✅ | ➖ (action only) | ➖ | ➖ |
+| Follow / unfollow, profiles | ✅ | ➖ (action only) | ➖ | ➖ |
+| Notifications | ✅ page + SSE count | ➖ (actions only) | ✅ unread count | ✅ page + SSE count |
+| Full-text search | ✅ | ➖ | ➖ | ➖ |
+| Trending (24h engagement score) | ✅ | ➖ | ➖ | ➖ |
+| Works without JavaScript | ✅ | login only | ➖ | ➖ |
+| Automated tests | ✅ pytest | type-check + build | type-check + build | type-check + build |
+
+The Flask stack is the most complete and serves as the reference implementation; the
+others cover the core read/write loop (auth, feed, post, like, retweet) so the
+interesting parts of each framework — SSR, hydration, optimistic updates, RPC — can be
+compared like for like.
 
 ---
 
-## Getting Started
+## Shared database
 
-### Prerequisites
+[`schema.sql`](schema.sql) is the single source of truth (no stack runs migrations):
 
-```bash
-# PostgreSQL 15+
-sudo apt install postgresql-15
+- `users`, `posts`, `follows`, `likes`, `notifications`, `bookmarks`, `sessions`
+- Replies use `parent_id` / `root_post_id` / `thread_depth`; retweets and quote tweets use
+  `original_post_id` with generated `is_retweet` / `is_quote_tweet` columns
+- Triggers keep denormalised counters (`likes_count`, `followers_count`, …) in sync
+- Partial and GIN indexes for the feed and full-text search
+- `get_user_feed()` and the recursive `get_thread()` helper functions
+- Fictional seed users, posts, follows and likes
 
-# Bun (for TypeScript stacks)
-curl -fsSL https://bun.sh/install | bash
-
-# uv (for Python)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### Database Setup
+## Running a stack without Docker
 
 ```bash
-# Create database
-createdb social_audit
-
-# Load schema
-psql social_audit < schema.sql
+createdb social_audit && psql social_audit < schema.sql
 ```
 
-### Run Individual Stacks
+Then follow the README in [`flask-stack`](flask-stack/), [`astro-stack`](astro-stack/),
+[`tanstack-stack`](tanstack-stack/) or [`angular-stack`](angular-stack/).
 
-#### Flask
+## Quality checks
 
 ```bash
-cd flask-stack
-uv venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-cp .env.example .env
-flask --app app run --debug
-# http://localhost:5000
+make check    # every stack: lint / type-check / tests / production build
 ```
 
-#### Astro
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same checks, then builds
+every Docker image and smoke-tests each app through Traefik.
 
-```bash
-cd astro-stack
-bun install
-cp .env.example .env
-bun run dev
-# http://localhost:4321
-```
-
-#### TanStack
-
-```bash
-cd tanstack-stack
-bun install
-cp .env.example .env
-bun run dev
-# http://localhost:3000
-```
-
-#### Angular
-
-```bash
-cd angular-stack
-bun install
-cp .env.example .env
-bun run start
-# http://localhost:4200
-```
-
----
-
-## Database Schema
-
-### Core Tables
-
-- **`users`** - User profiles, verification status, follower counts
-- **`posts`** - Posts, replies, retweets, quote tweets
-- **`likes`** - Post engagement tracking
-- **`follows`** - Social graph relationships
-- **`notifications`** - Real-time notification system
-
-### Advanced Features
-
-- **Recursive CTEs** - Efficient thread queries
-- **Database Triggers** - Auto-update denormalized counts
-- **GIN Indexes** - Full-text search optimization
-- **Check Constraints** - Data integrity enforcement
-
-See [schema.sql](schema.sql) for complete schema definition.
-
----
-
-## Testing
-
-### Flask
-
-```bash
-cd flask-stack
-pytest
-pytest --cov=app
-mypy app/ --strict
-ruff check app/
-```
-
-### TypeScript Stacks
-
-```bash
-# Astro/TanStack/Angular
-bun run test
-bun run type-check
-bun run lint
-```
-
----
-
-## Deployment
-
-### Docker (Recommended)
-
-```bash
-# All stacks with Traefik reverse proxy
-docker-compose up -d
-
-# Individual stack
-docker-compose up -d flask
-```
-
-### Manual Deployment
-
-Each stack includes a `Dockerfile` for containerized deployment:
-
-```bash
-cd flask-stack
-docker build -t social-flask .
-docker run -p 5000:5000 -e DATABASE_URL=... social-flask
-```
-
----
-
-## Project Structure
+## Project structure
 
 ```
-/
-├── schema.sql                 # Shared PostgreSQL schema
-├── docker-compose.yml         # Multi-stack deployment
-├── Makefile                   # Convenience commands
-│
-├── flask-stack/              # Python implementation
-│   ├── app/
-│   │   ├── models/          # SQLAlchemy models
-│   │   ├── schemas/         # Pydantic schemas
-│   │   ├── routes/          # Flask blueprints
-│   │   └── templates/       # HTMx templates
-│   └── pyproject.toml
-│
-├── astro-stack/             # Astro implementation
-│   ├── src/
-│   │   ├── actions/         # Server actions
-│   │   ├── components/      # Svelte islands
-│   │   ├── pages/           # Routes
-│   │   └── lib/             # Database client
-│   └── package.json
-│
-├── tanstack-stack/          # TanStack implementation
-│   ├── app/
-│   │   ├── routes/          # TanStack Router
-│   │   ├── components/      # React components
-│   │   └── lib/             # Server functions
-│   └── package.json
-│
-└── angular-stack/           # Angular implementation
-    ├── src/
-    │   ├── app/
-    │   │   ├── core/        # Services & signals
-    │   │   ├── features/    # Lazy-loaded routes
-    │   │   └── shared/      # Shared components
-    │   └── main.ts
-    └── package.json
+├── schema.sql            # shared PostgreSQL schema + seed data
+├── docker-compose.yml    # Traefik + Postgres + the four apps
+├── Makefile
+├── flask-stack/          # app/{routes,services,models,templates}, tests/
+├── astro-stack/          # src/{pages,actions,components,lib}
+├── tanstack-stack/       # app/{routes,components,lib}
+└── angular-stack/        # src/app/{core,features,shared}, server/ (API)
 ```
-
----
-
-## Decision Guide
-
-Choose your stack based on:
-
-| Your Requirement | Recommended Stack |
-|-----------------|-------------------|
-| Python-first team | **Flask** |
-| Best SEO & performance | **Astro** |
-| Highly interactive SPA | **TanStack** |
-| Enterprise/large teams | **Angular** |
-| Smallest bundle | **Flask** |
-| Modern TypeScript DX | **Astro** or **TanStack** |
-| Existing React codebase | **TanStack** |
-| Existing Angular codebase | **Angular** |
-
----
 
 ## Contributing
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- Code standards
-- Pull request process
-- Development workflow
-- Testing requirements
-
----
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## Useful Commands
-
-```bash
-# Show all make commands
-make help
-
-# View logs
-make logs
-make logs-flask
-make logs-astro
-
-# Restart services
-make restart
-make restart-flask
-
-# Rebuild images
-make rebuild
-
-# Database operations
-make db-shell
-make db-reset
-
-# Open in browser
-make open-all
-```
-
----
-
-**Built to help teams make informed decisions about modern web frameworks**
+MIT — see [LICENSE](LICENSE).
